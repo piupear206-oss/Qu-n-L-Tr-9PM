@@ -4,7 +4,7 @@ import Modal from '../components/Modal';
 import { ShoppingCart, Minus, Plus, X, Printer, CreditCard, Banknote, Smartphone, CheckCircle } from 'lucide-react';
 
 export default function OrderManagement() {
-  const { products, categories, tables, addOrder, updateTable, updateOrder } = useData();
+  const { products, categories, tables, orders, addOrder, updateTable, updateOrder } = useData();
   const [selectedTable, setSelectedTable] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [cart, setCart] = useState([]);

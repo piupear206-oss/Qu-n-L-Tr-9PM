@@ -405,7 +405,7 @@ export default function OrderManagement() {
       >
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-primary-light)' }}>
-            {formatMoney(cartTotal)}
+            {formatMoney(currentOrder ? currentOrder.total : cartTotal)}
           </div>
           <div className="text-muted">Tổng tiền cần thanh toán</div>
         </div>
@@ -436,11 +436,11 @@ export default function OrderManagement() {
                 value={paymentForm.cashAmount}
                 onChange={(e) => setPaymentForm({ ...paymentForm, cashAmount: e.target.value })} />
             </div>
-            {paymentForm.cashAmount && Number(paymentForm.cashAmount) >= cartTotal && (
+            {paymentForm.cashAmount && Number(paymentForm.cashAmount) >= (currentOrder ? currentOrder.total : cartTotal) && (
               <div className="card" style={{ padding: 12, textAlign: 'center', borderColor: 'var(--accent-success)' }}>
                 <span className="text-muted">Tiền thừa: </span>
                 <span className="text-success" style={{ fontWeight: 700, fontSize: '1.2rem' }}>
-                  {formatMoney(Number(paymentForm.cashAmount) - cartTotal)}
+                  {formatMoney(Number(paymentForm.cashAmount) - (currentOrder ? currentOrder.total : cartTotal))}
                 </span>
               </div>
             )}

@@ -16,27 +16,46 @@ const DEFAULT_USERS = [
 
 export function AuthProvider({ children }) {
   const [users, setUsers] = useState(DEFAULT_USERS);
+  const [sessions, setSessions] = useState([]);
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem(SESSION_KEY);
     return saved ? JSON.parse(saved) : null;
   });
 
-  // Listen to Firebase for users
+  // Listen to Firebase for users and sessions
   useEffect(() => {
     const usersRef = ref(db, '9pm_users');
-    const unsub = onValue(usersRef, (snapshot) => {
+    const unsubUsers = onValue(usersRef, (snapshot) => {
       const val = snapshot.val();
       if (val) {
         const data = Array.isArray(val) ? val.filter(Boolean) : Object.values(val).filter(Boolean);
         setUsers(data);
       } else {
-        // Initialize with default admin
         set(usersRef, DEFAULT_USERS);
       }
-    }, (error) => {
-      console.warn('Firebase users error:', error);
     });
-    return () => unsub();
+
+    const sessionsRef = ref(db, '9pm_sessions');
+    const unsubSessions = onValue(sessionsRef, (snapshot) => {
+      const val = snapshot.val();
+      if (val) {
+        const data = Array.isArray(val) ? val.filter(Boolean) : Object.values(val).filter(Boolean);
+        
+        // Auto-logout if current session is removed from another device
+        const currentSessionId = localStorage.getItem('9pm_session_id');
+        if (currentSessionId && !data.find(s => s.sessionId === currentSessionId)) {
+          setUser(null);
+          localStorage.removeItem(SESSION_KEY);
+          localStorage.removeItem('9pm_session_id');
+        }
+
+        setSessions(data);
+      } else {
+        setSessions([]);
+      }
+    });
+
+    return () => { unsubUsers(); unsubSessions(); };
   }, []);
 
   useEffect(() => {
@@ -44,20 +63,74 @@ export function AuthProvider({ children }) {
       localStorage.setItem(SESSION_KEY, JSON.stringify(user));
     } else {
       localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem('9pm_session_id');
     }
   }, [user]);
+
+  const getDeviceInfo = () => {
+    const ua = navigator.userAgent;
+    let browser = 'Unknown Browser';
+    if (ua.includes('Chrome')) browser = 'Chrome';
+    else if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('Safari')) browser = 'Safari';
+    else if (ua.includes('Edge')) browser = 'Edge';
+
+    let device = 'Desktop';
+    if (/Mobi|Android/i.test(ua)) device = 'Mobile';
+    else if (/Tablet|iPad/i.test(ua)) device = 'Tablet';
+
+    return { ua, browser, device: `${device} - ${browser}` };
+  };
 
   const login = (username, password) => {
     const found = users.find(u => u.username === username && u.password === password);
     if (found) {
       const userData = { id: found.id, username: found.username, name: found.name, role: found.role, employeeId: found.employeeId };
       setUser(userData);
+      
+      // Save session
+      const sessionId = 'sess_' + Date.now() + Math.random().toString(36).substring(7);
+      localStorage.setItem('9pm_session_id', sessionId);
+      
+      const { ua, browser, device } = getDeviceInfo();
+      const newSession = {
+        sessionId,
+        userId: found.id,
+        userAgent: ua,
+        browser: browser,
+        deviceInfo: device,
+        loginTime: new Date().toISOString()
+      };
+      
+      const updatedSessions = [...sessions, newSession];
+      setSessions(updatedSessions);
+      set(ref(db, '9pm_sessions'), updatedSessions);
+
       return { success: true };
     }
     return { success: false, message: 'Sai tên đăng nhập hoặc mật khẩu!' };
   };
 
-  const logout = () => setUser(null);
+  const logout = () => {
+    const currentSessionId = localStorage.getItem('9pm_session_id');
+    if (currentSessionId) {
+      const updatedSessions = sessions.filter(s => s.sessionId !== currentSessionId);
+      setSessions(updatedSessions);
+      set(ref(db, '9pm_sessions'), updatedSessions);
+    }
+    setUser(null);
+  };
+
+  const logoutSession = (sessionId) => {
+    const updatedSessions = sessions.filter(s => s.sessionId !== sessionId);
+    setSessions(updatedSessions);
+    set(ref(db, '9pm_sessions'), updatedSessions);
+    
+    if (localStorage.getItem('9pm_session_id') === sessionId) {
+      setUser(null);
+    }
+  };
+
   const isAdmin = () => user?.role === 'admin';
 
   const createEmployeeAccount = (employeeId, employeeName, username, password) => {
@@ -104,7 +177,10 @@ export function AuthProvider({ children }) {
   const getEmployeeAccounts = () => users.filter(u => u.role === 'employee');
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, resetPassword, isAdmin, createEmployeeAccount, deleteEmployeeAccount, getEmployeeAccounts }}>
+    <AuthContext.Provider value={{ 
+      user, sessions, login, logout, logoutSession, register, resetPassword, 
+      isAdmin, createEmployeeAccount, deleteEmployeeAccount, getEmployeeAccounts 
+    }}>
       {children}
     </AuthContext.Provider>
   );

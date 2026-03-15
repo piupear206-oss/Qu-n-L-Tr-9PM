@@ -3,12 +3,18 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard, Users, Package, DollarSign, Armchair,
   ShoppingCart, Coffee, ClipboardList, Camera, Calculator,
-  LogOut, Bell
+  LogOut, Bell, User
 } from 'lucide-react';
 
 const adminNav = [
   { section: 'Tổng Quan', items: [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  ]},
+  { section: 'Bán Hàng', items: [
+    { id: 'products', label: 'Sản Phẩm', icon: Coffee },
+    { id: 'orders', label: 'Order Món', icon: ShoppingCart },
+    { id: 'order-history', label: 'Lịch Sử Order', icon: ClipboardList },
+    { id: 'notifications', label: 'Thông Báo', icon: Bell },
   ]},
   { section: 'Quản Lí', items: [
     { id: 'employees', label: 'Nhân Viên', icon: Users },
@@ -18,11 +24,8 @@ const adminNav = [
     { id: 'finance', label: 'Thu Chi', icon: DollarSign },
     { id: 'tables', label: 'Số Bàn', icon: Armchair },
   ]},
-  { section: 'Bán Hàng', items: [
-    { id: 'products', label: 'Sản Phẩm', icon: Coffee },
-    { id: 'orders', label: 'Order Món', icon: ShoppingCart },
-    { id: 'order-history', label: 'Lịch Sử Order', icon: ClipboardList },
-    { id: 'notifications', label: 'Thông Báo', icon: Bell },
+  { section: 'Cá Nhân', items: [
+    { id: 'profile', label: 'Hồ Sơ', icon: User },
   ]},
 ];
 
@@ -34,6 +37,7 @@ const employeeNav = [
   { section: 'Cá Nhân', items: [
     { id: 'employee-attendance', label: 'Chấm Công', icon: Camera },
     { id: 'my-salary', label: 'Bảng Lương', icon: Calculator },
+    { id: 'profile', label: 'Hồ Sơ', icon: User },
   ]},
 ];
 

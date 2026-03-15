@@ -16,6 +16,7 @@ import EmployeeOrder from './pages/EmployeeOrder';
 import EmployeeAttendance from './pages/EmployeeAttendance';
 import Notifications from './pages/Notifications';
 import MySalary from './pages/MySalary';
+import UserProfile from './pages/UserProfile';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 
 function LoginPage() {
@@ -229,6 +230,7 @@ function AppContent() {
         case 'orders': return <OrderManagement />;
         case 'order-history': return <OrderHistory />;
         case 'notifications': return <Notifications />;
+        case 'profile': return <UserProfile />;
         default: return <Dashboard />;
       }
     } else {
@@ -237,6 +239,7 @@ function AppContent() {
         case 'order-history': return <OrderHistory />;
         case 'employee-attendance': return <EmployeeAttendance />;
         case 'my-salary': return <MySalary />;
+        case 'profile': return <UserProfile />;
         default: return <EmployeeOrder />;
       }
     }

@@ -161,21 +161,58 @@ export default function EmployeeAttendance() {
           {/* Step 3: Camera */}
           <div className="form-group">
             <label>3. Chụp Ảnh Xác Nhận *</label>
-          </div>
-          <div className="camera-container mb-2">
-            {cameraActive ? (
-              <>
-                <video ref={videoRef} autoPlay playsInline style={{ display: capturedPhoto ? 'none' : 'block' }} />
-                {capturedPhoto && <img src={capturedPhoto} alt="" style={{ width: '100%', borderRadius: 'var(--radius-lg)' }} />}
-                <div className="camera-overlay" style={{ display: capturedPhoto ? 'none' : 'block' }} />
-              </>
-            ) : (
-              <div style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                <CameraOff size={40} style={{ marginBottom: 8, opacity: 0.5 }} />
-                <p>Bật camera để chấm công</p>
-              </div>
-            )}
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
+            <div className="camera-container mb-2" style={{ 
+              width: '100%', 
+              height: 240, 
+              background: '#000', 
+              borderRadius: 'var(--radius-md)', 
+              overflow: 'hidden', 
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              {!cameraActive ? (
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <CameraOff size={40} style={{ marginBottom: 8, opacity: 0.5, display: 'inline-block' }} />
+                  <p style={{ margin: 0 }}>Bật camera để chấm công</p>
+                </div>
+              ) : (
+                <>
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    playsInline 
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'cover', 
+                      display: capturedPhoto ? 'none' : 'block' 
+                    }} 
+                  />
+                  {capturedPhoto && (
+                    <img 
+                      src={capturedPhoto} 
+                      alt="Captured" 
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'cover' 
+                      }} 
+                    />
+                  )}
+                  {!capturedPhoto && (
+                    <div className="camera-overlay" style={{ 
+                      position: 'absolute', 
+                      top: 0, left: 0, right: 0, bottom: 0, 
+                      border: '2px solid rgba(255,255,255,0.2)',
+                      pointerEvents: 'none'
+                    }} />
+                  )}
+                </>
+              )}
+              <canvas ref={canvasRef} style={{ display: 'none' }} />
+            </div>
           </div>
 
           <div className="btn-group">

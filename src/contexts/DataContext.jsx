@@ -206,6 +206,10 @@ export function DataProvider({ children }) {
     setAttendance(updated); saveAll('attendance', updated);
     return newRecord;
   };
+  const deleteAttendanceRecord = (id) => {
+    const updated = attendance.filter(a => a.id !== id);
+    setAttendance(updated); saveAll('attendance', updated);
+  };
 
   // Salary Records
   const addSalaryRecord = (record) => {
@@ -242,7 +246,7 @@ export function DataProvider({ children }) {
     orders, addOrder, updateOrder, deleteOrder,
     inventory, addInventoryItem, updateInventoryItem, deleteInventoryItem,
     finance, addFinanceRecord, deleteFinanceRecord,
-    attendance, addAttendanceRecord,
+    attendance, addAttendanceRecord, deleteAttendanceRecord,
     salaryRecords, addSalaryRecord, updateSalaryRecord, deleteSalaryRecord,
     getTodayOrders, getTodayRevenue,
     generateId, loaded,

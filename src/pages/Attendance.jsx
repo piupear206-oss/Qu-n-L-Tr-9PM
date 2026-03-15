@@ -15,7 +15,7 @@ function loadShifts() {
 }
 
 export default function Attendance() {
-  const { attendance, addAttendanceRecord, employees } = useData();
+  const { attendance, addAttendanceRecord, deleteAttendanceRecord, employees } = useData();
   const [shifts, setShifts] = useState(loadShifts);
   const [search, setSearch] = useState('');
   const [filterDate, setFilterDate] = useState(new Date().toISOString().slice(0, 10));
@@ -131,6 +131,7 @@ export default function Attendance() {
                 <th>Loại</th>
                 <th>Phương Thức</th>
                 <th>Trạng Thái</th>
+                <th>Thao Tác</th>
               </tr>
             </thead>
             <tbody>
@@ -165,6 +166,11 @@ export default function Attendance() {
                     {r.isLate && <span className="badge badge-danger">Trễ {r.lateMinutes}p</span>}
                     {r.approvedByAdmin && <span className="badge badge-success" style={{ marginLeft: 4 }}>Admin ✓</span>}
                     {!r.isLate && !r.approvedByAdmin && <span className="badge badge-success">Đúng giờ</span>}
+                  </td>
+                  <td>
+                    <button className="btn btn-ghost btn-sm text-danger" onClick={() => { if (window.confirm('Xóa bản ghi chấm công này?')) deleteAttendanceRecord(r.id); }}>
+                      <Trash2 size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}

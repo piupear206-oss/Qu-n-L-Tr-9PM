@@ -295,20 +295,23 @@ export default function OrderManagement() {
 
             {currentOrder && (
               <div className="card mb-2" style={{ padding: 16 }}>
-                <h4 style={{ marginBottom: 8 }}>📋 Order hiện tại ({currentOrder.items?.length} món):</h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <h4 style={{ margin: 0 }}>📋 Order hiện tại ({currentOrder.items?.length} món)</h4>
+                  <span className="badge badge-warning">⏳ Chưa TT</span>
+                </div>
                 {currentOrder.items?.map((item, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.85rem' }}>
                     <span>{item.emoji} {item.qty}x {item.name}</span>
                     <span className="text-accent">{formatMoney(item.price * item.qty)}</span>
                   </div>
                 ))}
-                <div style={{ borderTop: '1px solid var(--border-color)', marginTop: 8, paddingTop: 8, fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Tổng hiện tại:</span>
+                <div style={{ borderTop: '1px dashed var(--border-color)', marginTop: 8, paddingTop: 8, fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Tổng hóa đơn hiện tại:</span>
                   <span className="text-accent">{formatMoney(currentOrder.total)}</span>
                 </div>
-                <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-                  <button className="btn btn-success flex-1" onClick={() => setShowPayment(true)}>
-                    <CreditCard size={16} /> Nhận Thanh Toán
+                <div style={{ marginTop: 16 }}>
+                  <button className="btn btn-success btn-block btn-lg" onClick={() => setShowPayment(true)}>
+                    <CreditCard size={20} /> Khách Yêu Cầu Thanh Toán
                   </button>
                 </div>
               </div>
@@ -341,7 +344,7 @@ export default function OrderManagement() {
           {/* Cart */}
           <div className="order-cart no-print">
             <div className="order-cart-header">
-              <span>🛒 {currentOrder ? 'Thêm Món' : 'Giỏ Hàng'} ({cart.reduce((s, i) => s + i.qty, 0)})</span>
+              <span>🛒 {currentOrder ? 'Khách Gọi Thêm Món' : 'Món Khách Gọi Lần 1'} ({cart.reduce((s, i) => s + i.qty, 0)})</span>
               {cart.length > 0 && (
                 <button className="btn btn-ghost btn-sm text-danger" onClick={() => setCart([])}>Xóa hết</button>
               )}
@@ -376,23 +379,16 @@ export default function OrderManagement() {
 
             <div className="order-cart-footer">
               <div className="form-group" style={{ marginBottom: 8 }}>
-                <input type="text" className="form-control" placeholder="Ghi chú order..." value={orderNote}
+                <input type="text" className="form-control" placeholder="Ghi chú (ít đá, nhiều đường...)" value={orderNote}
                   onChange={(e) => setOrderNote(e.target.value)} style={{ fontSize: '0.85rem' }} />
               </div>
               <div className="cart-total">
-                <span>{currentOrder ? 'Tổng thêm:' : 'Tổng cộng:'}</span>
+                <span>{currentOrder ? 'Tổng tiền món gọi thêm:' : 'Tổng tiền order:'}</span>
                 <span className="text-accent">{formatMoney(cartTotal)}</span>
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-primary flex-1" onClick={handleSaveOrder} disabled={cart.length === 0}>
-                  💾 Lưu Order (Chưa TT)
-                </button>
-                {!currentOrder && (
-                  <button className="btn btn-success flex-1" onClick={() => setShowPayment(true)} disabled={cart.length === 0}>
-                    <CreditCard size={18} /> TT Ngay
-                  </button>
-                )}
-              </div>
+              <button className="btn btn-primary btn-block btn-lg" onClick={handleSaveOrder} disabled={cart.length === 0}>
+                <CheckCircle size={20} /> Chỉ Xác Nhận Món (Chưa TT)
+              </button>
             </div>
           </div>
         </div>

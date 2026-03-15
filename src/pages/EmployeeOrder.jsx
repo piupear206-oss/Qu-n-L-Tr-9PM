@@ -278,23 +278,26 @@ export default function EmployeeOrder() {
             {/* Show existing order items if adding to order */}
             {addingToOrder && (
               <div className="card mb-2" style={{ padding: 16 }}>
-                <h4 style={{ marginBottom: 8 }}>📋 Order hiện tại ({addingToOrder.items?.length} món):</h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <h4 style={{ margin: 0 }}>📋 Order hiện tại ({addingToOrder.items?.length} món)</h4>
+                  <span className="badge badge-warning">⏳ Chưa TT</span>
+                </div>
                 {addingToOrder.items?.map((item, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.85rem' }}>
                     <span>{item.emoji} {item.qty}x {item.name}</span>
                     <span className="text-accent">{formatMoney(item.price * item.qty)}</span>
                   </div>
                 ))}
-                <div style={{ borderTop: '1px solid var(--border-color)', marginTop: 8, paddingTop: 8, fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Tổng hiện tại:</span>
+                <div style={{ borderTop: '1px dashed var(--border-color)', marginTop: 8, paddingTop: 8, fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Tổng hóa đơn hiện tại:</span>
                   <span className="text-accent">{formatMoney(addingToOrder.total)}</span>
                 </div>
-                <div style={{ marginTop: 12 }}>
-                  <button className="btn btn-success" onClick={() => {
+                <div style={{ marginTop: 16 }}>
+                  <button className="btn btn-success btn-block btn-lg" onClick={() => {
                     setSelectedTable({ ...selectedTable });
                     setShowPayment(true);
                   }}>
-                    <CreditCard size={16} /> Thanh Toán Bàn Này
+                    <CreditCard size={20} /> Khách Yêu Cầu Thanh Toán
                   </button>
                 </div>
               </div>
@@ -325,7 +328,7 @@ export default function EmployeeOrder() {
           {/* Cart */}
           <div className="order-cart">
             <div className="order-cart-header">
-              <span>🛒 {addingToOrder ? 'Thêm Món' : 'Giỏ Hàng'} ({cart.reduce((s, i) => s + i.qty, 0)})</span>
+              <span>🛒 {addingToOrder ? 'Khách Gọi Thêm Món' : 'Món Khách Gọi Lần 1'} ({cart.reduce((s, i) => s + i.qty, 0)})</span>
               {cart.length > 0 && (
                 <button className="btn btn-ghost btn-sm text-danger" onClick={() => setCart([])}>Xóa hết</button>
               )}
@@ -360,15 +363,15 @@ export default function EmployeeOrder() {
 
             <div className="order-cart-footer">
               <div className="form-group" style={{ marginBottom: 8 }}>
-                <input type="text" className="form-control" placeholder="Ghi chú..." value={orderNote}
+                <input type="text" className="form-control" placeholder="Ghi chú (ít đá, nhiều đường...)" value={orderNote}
                   onChange={(e) => setOrderNote(e.target.value)} style={{ fontSize: '0.85rem' }} />
               </div>
               <div className="cart-total">
-                <span>Tổng thêm:</span>
+                <span>{addingToOrder ? 'Tổng tiền món gọi thêm:' : 'Tổng tiền order:'}</span>
                 <span className="text-accent">{formatMoney(cartTotal)}</span>
               </div>
-              <button className="btn btn-success btn-block btn-lg" onClick={handleSendOrder} disabled={cart.length === 0}>
-                <Send size={20} /> Gửi Order Về Hệ Thống
+              <button className="btn btn-primary btn-block btn-lg" onClick={handleSendOrder} disabled={cart.length === 0}>
+                <Send size={20} /> Chỉ Xác Nhận Món (Chưa TT)
               </button>
             </div>
           </div>

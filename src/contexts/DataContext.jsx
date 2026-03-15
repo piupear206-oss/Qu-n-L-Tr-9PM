@@ -6,31 +6,32 @@ const DataContext = createContext(null);
 const DATA_KEYS = ['employees', 'products', 'categories', 'tables', 'orders', 'inventory', 'finance', 'attendance', 'salaryRecords'];
 
 const DEFAULT_CATEGORIES = [
-  { id: '1', name: 'Trà Sữa', emoji: '🧋' },
-  { id: '2', name: 'Trà Trái Cây', emoji: '🍊' },
-  { id: '3', name: 'Coffee', emoji: '☕' },
-  { id: '4', name: 'Đá Xay', emoji: '🧊' },
-  { id: '5', name: 'Topping', emoji: '🧁' },
-  { id: '6', name: 'Đồ Ăn Vặt', emoji: '🍿' },
+  { id: '1', name: 'Trà', emoji: '🍵' },
+  { id: '2', name: 'Soda', emoji: '🥤' },
+  { id: '3', name: 'Matcha', emoji: '🍵' },
+  { id: '4', name: 'Đồ Ăn Vặt', emoji: '🍿' },
 ];
 
 const DEFAULT_PRODUCTS = [
-  { id: '1', name: 'Trà Sữa Trân Châu', price: 35000, categoryId: '1', emoji: '🧋' },
-  { id: '2', name: 'Trà Sữa Matcha', price: 40000, categoryId: '1', emoji: '🍵' },
-  { id: '3', name: 'Trà Sữa Ô Long', price: 35000, categoryId: '1', emoji: '🧋' },
-  { id: '4', name: 'Trà Sữa Socola', price: 38000, categoryId: '1', emoji: '🍫' },
-  { id: '5', name: 'Trà Đào Cam Sả', price: 32000, categoryId: '2', emoji: '🍑' },
-  { id: '6', name: 'Trà Vải', price: 30000, categoryId: '2', emoji: '🫐' },
-  { id: '7', name: 'Trà Chanh Leo', price: 28000, categoryId: '2', emoji: '🍋' },
-  { id: '8', name: 'Cà Phê Sữa Đá', price: 25000, categoryId: '3', emoji: '☕' },
-  { id: '9', name: 'Americano', price: 35000, categoryId: '3', emoji: '☕' },
-  { id: '10', name: 'Latte', price: 40000, categoryId: '3', emoji: '☕' },
-  { id: '11', name: 'Sinh Tố Bơ', price: 35000, categoryId: '4', emoji: '🥑' },
-  { id: '12', name: 'Sinh Tố Dâu', price: 32000, categoryId: '4', emoji: '🍓' },
-  { id: '13', name: 'Trân Châu Đen', price: 8000, categoryId: '5', emoji: '⚫' },
-  { id: '14', name: 'Thạch Dừa', price: 6000, categoryId: '5', emoji: '🥥' },
-  { id: '15', name: 'Khoai Tây Chiên', price: 25000, categoryId: '6', emoji: '🍟' },
-  { id: '16', name: 'Bánh Tráng Trộn', price: 20000, categoryId: '6', emoji: '🥟' },
+  // Trà
+  { id: '1', name: 'Trà Lài Nhãn Sen Đường Phèn', price: 29000, categoryId: '1', emoji: '🍵' },
+  { id: '2', name: 'Trà Chanh Dây', price: 22000, categoryId: '1', emoji: '🍋' },
+  { id: '3', name: 'Trà Lipton', price: 20000, categoryId: '1', emoji: '🍵' },
+  { id: '4', name: 'Trà Lài Đặc Thơm', price: 32000, categoryId: '1', emoji: '🍵' },
+  { id: '5', name: 'Trà Ổi Hồng', price: 32000, categoryId: '1', emoji: '🍑' },
+  { id: '6', name: 'Trà Đào', price: 32000, categoryId: '1', emoji: '🍑' },
+  { id: '7', name: 'Trà Vải Hoa Hồng', price: 32000, categoryId: '1', emoji: '🌹' },
+  // Soda
+  { id: '8', name: 'Soda Việt Quất', price: 20000, categoryId: '2', emoji: '🫐' },
+  { id: '9', name: 'Soda Dâu', price: 20000, categoryId: '2', emoji: '🍓' },
+  // Matcha
+  { id: '10', name: 'Matcha Latte', price: 35000, categoryId: '3', emoji: '🍵' },
+  // Đồ Ăn Vặt Chill Chill
+  { id: '11', name: 'Bánh Que', price: 12000, categoryId: '4', emoji: '🍿' },
+  { id: '12', name: 'Hạt Hướng Dương', price: 10000, categoryId: '4', emoji: '🌻' },
+  { id: '13', name: 'Bắp Nướng', price: 10000, categoryId: '4', emoji: '🌽' },
+  { id: '14', name: 'Thịt Xiên Nướng', price: 13000, categoryId: '4', emoji: '🍢' },
+  { id: '15', name: 'Bánh Tráng', price: 10000, categoryId: '4', emoji: '🥟' },
 ];
 
 const DEFAULT_TABLES = [

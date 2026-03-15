@@ -1,18 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { db, ref, set, onValue } from '../firebase';
 
 const DataContext = createContext(null);
 
-const STORAGE_KEYS = {
-  employees: '9pm_employees',
-  products: '9pm_products',
-  categories: '9pm_categories',
-  tables: '9pm_tables',
-  orders: '9pm_orders',
-  inventory: '9pm_inventory',
-  finance: '9pm_finance',
-  attendance: '9pm_attendance',
-  salaryRecords: '9pm_salary_records',
-};
+const DATA_KEYS = ['employees', 'products', 'categories', 'tables', 'orders', 'inventory', 'finance', 'attendance', 'salaryRecords'];
 
 const DEFAULT_CATEGORIES = [
   { id: '1', name: 'Trà Sữa', emoji: '🧋' },
@@ -53,108 +44,183 @@ const DEFAULT_TABLES = [
   { id: '8', name: 'Bàn 8', status: 'available' },
 ];
 
-function loadData(key, defaultValue = []) {
+const DEFAULTS = {
+  employees: [],
+  products: DEFAULT_PRODUCTS,
+  categories: DEFAULT_CATEGORIES,
+  tables: DEFAULT_TABLES,
+  orders: [],
+  inventory: [],
+  finance: [],
+  attendance: [],
+  salaryRecords: [],
+};
+
+// Save to Firebase helper
+function saveToFirebase(key, data) {
   try {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : defaultValue;
-  } catch {
-    return defaultValue;
+    set(ref(db, key), data);
+  } catch (err) {
+    console.warn('Firebase save error:', key, err);
   }
 }
 
-function saveData(key, data) {
-  localStorage.setItem(key, JSON.stringify(data));
-}
-
 export function DataProvider({ children }) {
-  const [employees, setEmployees] = useState(() => loadData(STORAGE_KEYS.employees));
-  const [products, setProducts] = useState(() => loadData(STORAGE_KEYS.products, DEFAULT_PRODUCTS));
-  const [categories, setCategories] = useState(() => loadData(STORAGE_KEYS.categories, DEFAULT_CATEGORIES));
-  const [tables, setTables] = useState(() => loadData(STORAGE_KEYS.tables, DEFAULT_TABLES));
-  const [orders, setOrders] = useState(() => loadData(STORAGE_KEYS.orders));
-  const [inventory, setInventory] = useState(() => loadData(STORAGE_KEYS.inventory));
-  const [finance, setFinance] = useState(() => loadData(STORAGE_KEYS.finance));
-  const [attendance, setAttendance] = useState(() => loadData(STORAGE_KEYS.attendance));
-  const [salaryRecords, setSalaryRecords] = useState(() => loadData(STORAGE_KEYS.salaryRecords));
+  const [employees, setEmployees] = useState(DEFAULTS.employees);
+  const [products, setProducts] = useState(DEFAULTS.products);
+  const [categories, setCategories] = useState(DEFAULTS.categories);
+  const [tables, setTables] = useState(DEFAULTS.tables);
+  const [orders, setOrders] = useState(DEFAULTS.orders);
+  const [inventory, setInventory] = useState(DEFAULTS.inventory);
+  const [finance, setFinance] = useState(DEFAULTS.finance);
+  const [attendance, setAttendance] = useState(DEFAULTS.attendance);
+  const [salaryRecords, setSalaryRecords] = useState(DEFAULTS.salaryRecords);
+  const [loaded, setLoaded] = useState(false);
 
-  // Auto-save to localStorage
-  useEffect(() => { saveData(STORAGE_KEYS.employees, employees); }, [employees]);
-  useEffect(() => { saveData(STORAGE_KEYS.products, products); }, [products]);
-  useEffect(() => { saveData(STORAGE_KEYS.categories, categories); }, [categories]);
-  useEffect(() => { saveData(STORAGE_KEYS.tables, tables); }, [tables]);
-  useEffect(() => { saveData(STORAGE_KEYS.orders, orders); }, [orders]);
-  useEffect(() => { saveData(STORAGE_KEYS.inventory, inventory); }, [inventory]);
-  useEffect(() => { saveData(STORAGE_KEYS.finance, finance); }, [finance]);
-  useEffect(() => { saveData(STORAGE_KEYS.attendance, attendance); }, [attendance]);
-  useEffect(() => { saveData(STORAGE_KEYS.salaryRecords, salaryRecords); }, [salaryRecords]);
+  // Real-time listeners from Firebase
+  useEffect(() => {
+    const stateSetters = { employees: setEmployees, products: setProducts, categories: setCategories, tables: setTables, orders: setOrders, inventory: setInventory, finance: setFinance, attendance: setAttendance, salaryRecords: setSalaryRecords };
+    const unsubscribes = [];
 
-  // Generic CRUD helpers
+    DATA_KEYS.forEach(key => {
+      const dbRef = ref(db, key);
+      const unsub = onValue(dbRef, (snapshot) => {
+        const val = snapshot.val();
+        if (val) {
+          // Firebase stores arrays as objects if they have gaps
+          const data = Array.isArray(val) ? val.filter(Boolean) : Object.values(val).filter(Boolean);
+          stateSetters[key](data);
+        } else if (DEFAULTS[key].length > 0) {
+          // Initialize Firebase with defaults if empty
+          saveToFirebase(key, DEFAULTS[key]);
+          stateSetters[key](DEFAULTS[key]);
+        }
+      }, (error) => {
+        console.warn('Firebase listen error:', key, error);
+      });
+      unsubscribes.push(unsub);
+    });
+
+    setLoaded(true);
+    return () => unsubscribes.forEach(fn => fn && fn());
+  }, []);
+
   const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+
+  // Generic save helper
+  const saveAll = (key, data) => saveToFirebase(key, data);
 
   // Employee CRUD
   const addEmployee = (emp) => {
     const newEmp = { ...emp, id: generateId(), createdAt: new Date().toISOString() };
-    setEmployees(prev => [...prev, newEmp]);
+    const updated = [...employees, newEmp];
+    setEmployees(updated); saveAll('employees', updated);
     return newEmp;
   };
-  const updateEmployee = (id, data) => setEmployees(prev => prev.map(e => e.id === id ? { ...e, ...data } : e));
-  const deleteEmployee = (id) => setEmployees(prev => prev.filter(e => e.id !== id));
+  const updateEmployee = (id, data) => {
+    const updated = employees.map(e => e.id === id ? { ...e, ...data } : e);
+    setEmployees(updated); saveAll('employees', updated);
+  };
+  const deleteEmployee = (id) => {
+    const updated = employees.filter(e => e.id !== id);
+    setEmployees(updated); saveAll('employees', updated);
+  };
 
   // Product CRUD
   const addProduct = (prod) => {
     const newProd = { ...prod, id: generateId() };
-    setProducts(prev => [...prev, newProd]);
+    const updated = [...products, newProd];
+    setProducts(updated); saveAll('products', updated);
     return newProd;
   };
-  const updateProduct = (id, data) => setProducts(prev => prev.map(p => p.id === id ? { ...p, ...data } : p));
-  const deleteProduct = (id) => setProducts(prev => prev.filter(p => p.id !== id));
+  const updateProduct = (id, data) => {
+    const updated = products.map(p => p.id === id ? { ...p, ...data } : p);
+    setProducts(updated); saveAll('products', updated);
+  };
+  const deleteProduct = (id) => {
+    const updated = products.filter(p => p.id !== id);
+    setProducts(updated); saveAll('products', updated);
+  };
 
   // Table CRUD
   const addTable = (table) => {
     const newTable = { ...table, id: generateId(), status: 'available' };
-    setTables(prev => [...prev, newTable]);
+    const updated = [...tables, newTable];
+    setTables(updated); saveAll('tables', updated);
   };
-  const updateTable = (id, data) => setTables(prev => prev.map(t => t.id === id ? { ...t, ...data } : t));
-  const deleteTable = (id) => setTables(prev => prev.filter(t => t.id !== id));
+  const updateTable = (id, data) => {
+    const updated = tables.map(t => t.id === id ? { ...t, ...data } : t);
+    setTables(updated); saveAll('tables', updated);
+  };
+  const deleteTable = (id) => {
+    const updated = tables.filter(t => t.id !== id);
+    setTables(updated); saveAll('tables', updated);
+  };
 
   // Order CRUD
   const addOrder = (order) => {
-    const newOrder = { ...order, id: generateId(), createdAt: new Date().toISOString(), status: 'pending' };
-    setOrders(prev => [...prev, newOrder]);
+    const newOrder = { ...order, id: generateId(), createdAt: new Date().toISOString(), status: order.status || 'pending' };
+    const updated = [...orders, newOrder];
+    setOrders(updated); saveAll('orders', updated);
     return newOrder;
   };
-  const updateOrder = (id, data) => setOrders(prev => prev.map(o => o.id === id ? { ...o, ...data } : o));
-  const deleteOrder = (id) => setOrders(prev => prev.filter(o => o.id !== id));
+  const updateOrder = (id, data) => {
+    const updated = orders.map(o => o.id === id ? { ...o, ...data } : o);
+    setOrders(updated); saveAll('orders', updated);
+  };
+  const deleteOrder = (id) => {
+    const updated = orders.filter(o => o.id !== id);
+    setOrders(updated); saveAll('orders', updated);
+  };
 
   // Inventory CRUD
   const addInventoryItem = (item) => {
     const newItem = { ...item, id: generateId(), createdAt: new Date().toISOString() };
-    setInventory(prev => [...prev, newItem]);
+    const updated = [...inventory, newItem];
+    setInventory(updated); saveAll('inventory', updated);
   };
-  const updateInventoryItem = (id, data) => setInventory(prev => prev.map(i => i.id === id ? { ...i, ...data } : i));
-  const deleteInventoryItem = (id) => setInventory(prev => prev.filter(i => i.id !== id));
+  const updateInventoryItem = (id, data) => {
+    const updated = inventory.map(i => i.id === id ? { ...i, ...data } : i);
+    setInventory(updated); saveAll('inventory', updated);
+  };
+  const deleteInventoryItem = (id) => {
+    const updated = inventory.filter(i => i.id !== id);
+    setInventory(updated); saveAll('inventory', updated);
+  };
 
   // Finance CRUD
   const addFinanceRecord = (record) => {
     const newRecord = { ...record, id: generateId(), createdAt: new Date().toISOString() };
-    setFinance(prev => [...prev, newRecord]);
+    const updated = [...finance, newRecord];
+    setFinance(updated); saveAll('finance', updated);
   };
-  const deleteFinanceRecord = (id) => setFinance(prev => prev.filter(f => f.id !== id));
+  const deleteFinanceRecord = (id) => {
+    const updated = finance.filter(f => f.id !== id);
+    setFinance(updated); saveAll('finance', updated);
+  };
 
   // Attendance
   const addAttendanceRecord = (record) => {
     const newRecord = { ...record, id: generateId(), timestamp: new Date().toISOString() };
-    setAttendance(prev => [...prev, newRecord]);
+    const updated = [...attendance, newRecord];
+    setAttendance(updated); saveAll('attendance', updated);
     return newRecord;
   };
 
   // Salary Records
   const addSalaryRecord = (record) => {
     const newRecord = { ...record, id: generateId() };
-    setSalaryRecords(prev => [...prev, newRecord]);
+    const updated = [...salaryRecords, newRecord];
+    setSalaryRecords(updated); saveAll('salaryRecords', updated);
   };
-  const updateSalaryRecord = (id, data) => setSalaryRecords(prev => prev.map(s => s.id === id ? { ...s, ...data } : s));
-  const deleteSalaryRecord = (id) => setSalaryRecords(prev => prev.filter(s => s.id !== id));
+  const updateSalaryRecord = (id, data) => {
+    const updated = salaryRecords.map(s => s.id === id ? { ...s, ...data } : s);
+    setSalaryRecords(updated); saveAll('salaryRecords', updated);
+  };
+  const deleteSalaryRecord = (id) => {
+    const updated = salaryRecords.filter(s => s.id !== id);
+    setSalaryRecords(updated); saveAll('salaryRecords', updated);
+  };
 
   // Stats
   const getTodayOrders = useCallback(() => {
@@ -179,7 +245,7 @@ export function DataProvider({ children }) {
     attendance, addAttendanceRecord,
     salaryRecords, addSalaryRecord, updateSalaryRecord, deleteSalaryRecord,
     getTodayOrders, getTodayRevenue,
-    generateId,
+    generateId, loaded,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import Modal from '../components/Modal';
-import { ClipboardList, Search, Eye, Printer, Trash2, AlertTriangle } from 'lucide-react';
+import { ClipboardList, Search, Eye, Printer, Trash2, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export default function OrderHistory() {
-  const { orders, deleteOrder } = useData();
+  const { orders, deleteOrder, updateOrder } = useData();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const [search, setSearch] = useState('');
@@ -28,11 +28,17 @@ export default function OrderHistory() {
 
   const confirmDelete = () => {
     if (deleteStep === 0) {
-      setDeleteStep(1); // Second confirmation
+      setDeleteStep(1);
     } else {
       deleteOrder(showDeleteConfirm.id);
       setShowDeleteConfirm(null);
       setDeleteStep(0);
+    }
+  };
+
+  const markAsPaid = (order) => {
+    if (window.confirm(`Xác nhận đơn ${order.tableName} - ${formatMoney(order.total)} đã thanh toán?`)) {
+      updateOrder(order.id, { status: 'paid', paidAt: new Date().toISOString(), paidBy: user?.name || 'Admin' });
     }
   };
 
@@ -87,16 +93,24 @@ export default function OrderHistory() {
                   <td className="text-accent" style={{ fontWeight: 600 }}>{formatMoney(order.total || 0)}</td>
                   <td>
                     <span className="badge badge-info">
-                      {order.paymentMethod === 'cash' ? '💵 Tiền mặt' : order.paymentMethod === 'bank' ? '🏦 CK' : order.paymentMethod === 'momo' ? '📱 MoMo' : '-'}
+                      {order.paymentMethod === 'cash' ? '💵 Mặt' : order.paymentMethod === 'bank' ? '🏦 CK' : order.paymentMethod === 'momo' ? '📱 MoMo' : '-'}
                     </span>
                   </td>
                   <td className="text-muted" style={{ fontSize: '0.8rem' }}>
                     {new Date(order.createdAt || order.timestamp).toLocaleString('vi-VN')}
                   </td>
                   <td>
-                    <span className={`badge ${order.status === 'paid' ? 'badge-success' : 'badge-warning'}`}>
-                      {order.status === 'paid' ? '✅ Đã TT' : '⏳ Chờ TT'}
-                    </span>
+                    {order.status === 'paid' ? (
+                      <span className="badge badge-success">✅ Đã TT</span>
+                    ) : (
+                      isAdmin ? (
+                        <button className="btn btn-success btn-sm" onClick={() => markAsPaid(order)} title="Đánh dấu đã thanh toán">
+                          <CheckCircle size={14} /> Xác nhận TT
+                        </button>
+                      ) : (
+                        <span className="badge badge-warning">⏳ Chờ TT</span>
+                      )
+                    )}
                   </td>
                   <td>
                     <div className="btn-group">
@@ -119,6 +133,7 @@ export default function OrderHistory() {
           </table>
         </div>
       )}
+
 
       {/* Order Detail / Bill Modal */}
       <Modal isOpen={!!selectedOrder} onClose={() => setSelectedOrder(null)} title="Chi Tiết Đơn Hàng"

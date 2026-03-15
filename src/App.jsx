@@ -19,16 +19,68 @@ import MySalary from './pages/MySalary';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 
 function LoginPage() {
-  const { login } = useAuth();
+  const { login, register, resetPassword } = useAuth();
+  const [view, setView] = useState('login'); // 'login', 'register', 'forgot'
+  
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
+  
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
-  const handleSubmit = (e) => {
+  const clearForm = () => {
+    setUsername('');
+    setPassword('');
+    setConfirmPassword('');
+    setName('');
+    setError('');
+    setSuccessMsg('');
+  };
+
+  const switchView = (newView) => {
+    clearForm();
+    setView(newView);
+  };
+
+  const handleLogin = (e) => {
     e.preventDefault();
     const result = login(username, password);
     if (!result.success) setError(result.message);
+  };
+
+  const handleRegister = (e) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp!');
+      return;
+    }
+    const result = register(username, password, name || username);
+    if (result.success) {
+      setSuccessMsg(result.message);
+      setError('');
+      setTimeout(() => switchView('login'), 2000);
+    } else {
+      setError(result.message);
+    }
+  };
+
+  const handleForgot = (e) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp!');
+      return;
+    }
+    const result = resetPassword(username, password);
+    if (result.success) {
+      setSuccessMsg(result.message);
+      setError('');
+      setTimeout(() => switchView('login'), 2000);
+    } else {
+      setError(result.message);
+    }
   };
 
   return (
@@ -39,34 +91,108 @@ function LoginPage() {
           <h1>Tiệm Trà 9PM</h1>
           <p>Hệ Thống Quản Lí</p>
         </div>
+        
         {error && (
           <div style={{ padding: '10px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: 'var(--accent-danger)', fontSize: '0.85rem', marginBottom: 16, textAlign: 'center' }}>
             {error}
           </div>
         )}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Tên Đăng Nhập</label>
-            <input type="text" className="form-control" placeholder="Nhập tên đăng nhập" value={username} onChange={(e) => setUsername(e.target.value)} required />
+        {successMsg && (
+          <div style={{ padding: '10px 16px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 8, color: 'var(--accent-success)', fontSize: '0.85rem', marginBottom: 16, textAlign: 'center' }}>
+            {successMsg}
           </div>
-          <div className="form-group">
-            <label>Mật Khẩu</label>
-            <div style={{ position: 'relative' }}>
-              <input type={showPassword ? 'text' : 'password'} className="form-control" placeholder="Nhập mật khẩu" value={password}
-                onChange={(e) => setPassword(e.target.value)} required style={{ paddingRight: 40 }} />
-              <button type="button" onClick={() => setShowPassword(!showPassword)}
-                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+        )}
+
+        {view === 'login' && (
+          <form onSubmit={handleLogin}>
+            <div className="form-group">
+              <label>Tên Đăng Nhập</label>
+              <input type="text" className="form-control" placeholder="Nhập tên đăng nhập" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            </div>
+            <div className="form-group">
+              <label>Mật Khẩu</label>
+              <div style={{ position: 'relative' }}>
+                <input type={showPassword ? 'text' : 'password'} className="form-control" placeholder="Nhập mật khẩu" value={password}
+                  onChange={(e) => setPassword(e.target.value)} required style={{ paddingRight: 40 }} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+              <button type="button" onClick={() => switchView('forgot')} style={{ background: 'none', border: 'none', color: 'var(--accent-primary-light)', fontSize: '0.85rem', cursor: 'pointer' }}>
+                Quên mật khẩu?
               </button>
             </div>
-          </div>
-          <button type="submit" className="btn btn-primary btn-block btn-lg" style={{ marginTop: 8 }}>
-            <Lock size={18} /> Đăng Nhập
-          </button>
-        </form>
-        <div style={{ textAlign: 'center', marginTop: 20, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          Admin: <strong>admin</strong> / <strong>admin123</strong>
-        </div>
+            <button type="submit" className="btn btn-primary btn-block btn-lg" style={{ marginTop: 8 }}>
+              <Lock size={18} /> Đăng Nhập
+            </button>
+            <div style={{ textAlign: 'center', marginTop: 20, fontSize: '0.9rem' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Chưa có tài khoản? </span>
+              <button type="button" onClick={() => switchView('register')} style={{ background: 'none', border: 'none', color: 'var(--accent-primary-light)', fontWeight: 600, cursor: 'pointer' }}>
+                Đăng kí ngay
+              </button>
+            </div>
+          </form>
+        )}
+
+        {view === 'register' && (
+          <form onSubmit={handleRegister}>
+            <div className="form-group">
+              <label>Tên Đầy Đủ</label>
+              <input type="text" className="form-control" placeholder="Nhập họ và tên" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div className="form-group">
+              <label>Tên Đăng Nhập</label>
+              <input type="text" className="form-control" placeholder="Nhập tên đăng nhập mong muốn" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            </div>
+            <div className="form-group">
+              <label>Mật Khẩu</label>
+              <input type={showPassword ? 'text' : 'password'} className="form-control" placeholder="Tạo mật khẩu" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+            <div className="form-group">
+              <label>Xác Nhận Mật Khẩu</label>
+              <input type={showPassword ? 'text' : 'password'} className="form-control" placeholder="Nhập lại mật khẩu" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+            </div>
+            <button type="submit" className="btn btn-success btn-block btn-lg" style={{ marginTop: 16 }}>
+              Tạo Tài Khoản
+            </button>
+            <div style={{ textAlign: 'center', marginTop: 20, fontSize: '0.9rem' }}>
+              <button type="button" onClick={() => switchView('login')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                ← Quay lại đăng nhập
+              </button>
+            </div>
+          </form>
+        )}
+
+        {view === 'forgot' && (
+          <form onSubmit={handleForgot}>
+            <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 20 }}>
+              Sử dụng tên đăng nhập của hệ thống để đặt lại mật khẩu mới
+            </p>
+            <div className="form-group">
+              <label>Tên Đăng Nhập Hiện Tại</label>
+              <input type="text" className="form-control" placeholder="Nhập tên đăng nhập của bạn" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            </div>
+            <div className="form-group">
+              <label>Mật Khẩu Mới</label>
+              <input type={showPassword ? 'text' : 'password'} className="form-control" placeholder="Nhập mật khẩu mới" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+            <div className="form-group">
+              <label>Xác Nhận Mật Khẩu Mới</label>
+              <input type={showPassword ? 'text' : 'password'} className="form-control" placeholder="Nhập lại mật khẩu mới" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+            </div>
+            <button type="submit" className="btn btn-primary btn-block btn-lg" style={{ marginTop: 16 }}>
+              Đặt Lại Mật Khẩu
+            </button>
+            <div style={{ textAlign: 'center', marginTop: 20, fontSize: '0.9rem' }}>
+              <button type="button" onClick={() => switchView('login')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                ← Quay lại đăng nhập
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

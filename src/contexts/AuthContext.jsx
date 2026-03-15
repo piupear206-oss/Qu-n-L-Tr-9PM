@@ -71,6 +71,30 @@ export function AuthProvider({ children }) {
     return { success: true };
   };
 
+  const register = (username, password, name) => {
+    if (users.find(u => u.username === username)) {
+      return { success: false, message: 'Tên đăng nhập đã được sử dụng!' };
+    }
+    // Default new registrations to employee role
+    const newUser = { id: 'user_' + Date.now(), username, password, name, role: 'employee' };
+    const updated = [...users, newUser];
+    setUsers(updated);
+    set(ref(db, '9pm_users'), updated);
+    return { success: true, message: 'Đăng kí thành công! Vui lòng đăng nhập.' };
+  };
+
+  const resetPassword = (username, newPassword) => {
+    const userIndex = users.findIndex(u => u.username === username);
+    if (userIndex === -1) {
+      return { success: false, message: 'Không tìm thấy tên đăng nhập này trong hệ thống!' };
+    }
+    const updated = [...users];
+    updated[userIndex].password = newPassword;
+    setUsers(updated);
+    set(ref(db, '9pm_users'), updated);
+    return { success: true, message: 'Đã thiết lập lại mật khẩu thành công!' };
+  };
+
   const deleteEmployeeAccount = (userId) => {
     const updated = users.filter(u => u.id !== userId || u.role === 'admin');
     setUsers(updated);
@@ -80,7 +104,7 @@ export function AuthProvider({ children }) {
   const getEmployeeAccounts = () => users.filter(u => u.role === 'employee');
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAdmin, createEmployeeAccount, deleteEmployeeAccount, getEmployeeAccounts }}>
+    <AuthContext.Provider value={{ user, login, logout, register, resetPassword, isAdmin, createEmployeeAccount, deleteEmployeeAccount, getEmployeeAccounts }}>
       {children}
     </AuthContext.Provider>
   );

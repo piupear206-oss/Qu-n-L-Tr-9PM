@@ -27,10 +27,13 @@ const adminNav = [
 ];
 
 const employeeNav = [
-  { section: 'Nhân Viên', items: [
+  { section: 'Bán Hàng', items: [
     { id: 'employee-order', label: 'Order Món', icon: ShoppingCart },
-    { id: 'order-history', label: 'Lịch Sử Order', icon: ClipboardList },
-    { id: 'my-salary', label: 'Bảng Lương Của Tôi', icon: Calculator },
+    { id: 'order-history', label: 'Lịch Sử / In Bill', icon: ClipboardList },
+  ]},
+  { section: 'Cá Nhân', items: [
+    { id: 'employee-attendance', label: 'Chấm Công', icon: Camera },
+    { id: 'my-salary', label: 'Bảng Lương', icon: Calculator },
   ]},
 ];
 

@@ -124,6 +124,7 @@ export function DataProvider({ children }) {
     return newOrder;
   };
   const updateOrder = (id, data) => setOrders(prev => prev.map(o => o.id === id ? { ...o, ...data } : o));
+  const deleteOrder = (id) => setOrders(prev => prev.filter(o => o.id !== id));
 
   // Inventory CRUD
   const addInventoryItem = (item) => {
@@ -172,7 +173,7 @@ export function DataProvider({ children }) {
     products, addProduct, updateProduct, deleteProduct,
     categories,
     tables, addTable, updateTable, deleteTable,
-    orders, addOrder, updateOrder,
+    orders, addOrder, updateOrder, deleteOrder,
     inventory, addInventoryItem, updateInventoryItem, deleteInventoryItem,
     finance, addFinanceRecord, deleteFinanceRecord,
     attendance, addAttendanceRecord,

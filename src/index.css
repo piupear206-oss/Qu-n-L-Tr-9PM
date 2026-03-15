@@ -718,8 +718,8 @@ textarea.form-control {
 
 .table-item.available { border-color: rgba(16, 185, 129, 0.4); }
 .table-item.available:hover { border-color: var(--accent-success); }
-.table-item.occupied { border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.05); }
-.table-item.occupied:hover { border-color: var(--accent-danger); }
+.table-item.occupied { border-color: rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.08); box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
+.table-item.occupied:hover { border-color: var(--accent-success); }
 
 .table-item .table-number {
   font-size: 1.4rem;
@@ -1082,6 +1082,11 @@ textarea.form-control {
 .animate-fade-in { animation: fadeIn 0.3s ease; }
 .animate-fade-in-up { animation: fadeInUp 0.4s ease; }
 .animate-slide-in { animation: slideInLeft 0.3s ease; }
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.8; }
+}
 
 /* ===== UTILITIES ===== */
 .text-center { text-align: center; }

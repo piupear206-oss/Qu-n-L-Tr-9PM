@@ -46,31 +46,99 @@ export default function OrderManagement() {
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
   const formatMoney = (n) => new Intl.NumberFormat('vi-VN').format(n) + 'đ';
 
-  const handleCreateOrder = () => {
+  // Check if table has existing active order
+  const getActiveOrder = (tableId) => {
+    return orders.find(o => o.tableId === tableId && o.status === 'pending');
+  };
+
+  const handleSelectTable = (table) => {
+    const existingOrder = getActiveOrder(table.id);
+    if (existingOrder) {
+      setCurrentOrder(existingOrder);
+    } else {
+      setCurrentOrder(null);
+    }
+    setCart([]);
+    setSelectedTable(table);
+    if (table.id && table.status === 'available') {
+      updateTable(table.id, { status: 'occupied' });
+    }
+  };
+
+  const handleSaveOrder = () => {
     if (cart.length === 0) return;
-    setShowPayment(true);
+
+    if (currentOrder) {
+      // Add items to existing order
+      const updatedItems = [...(currentOrder.items || [])];
+      cart.forEach(cartItem => {
+        const existing = updatedItems.find(i => i.id === cartItem.id);
+        if (existing) {
+          existing.qty += cartItem.qty;
+        } else {
+          updatedItems.push({ id: cartItem.id, name: cartItem.name, price: cartItem.price, qty: cartItem.qty, emoji: cartItem.emoji });
+        }
+      });
+      const newTotal = updatedItems.reduce((sum, i) => sum + i.price * i.qty, 0);
+      updateOrder(currentOrder.id, {
+        items: updatedItems,
+        total: newTotal,
+        lastUpdatedBy: 'Admin',
+        lastUpdatedAt: new Date().toISOString(),
+      });
+    } else {
+      // Create new pending order
+      addOrder({
+        tableId: selectedTable?.id || null,
+        tableName: selectedTable?.name || 'Mang đi',
+        items: cart.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty, emoji: i.emoji })),
+        total: cartTotal,
+        note: orderNote,
+        status: 'pending',
+        employeeName: 'Admin',
+      });
+    }
+    setCart([]);
+    setOrderNote('');
+    alert('✅ Đã lưu order thành công!');
+    setSelectedTable(null);
+    setCurrentOrder(null);
   };
 
   const handlePayment = () => {
-    const order = addOrder({
+    const orderToPay = currentOrder || {
       tableId: selectedTable?.id || null,
       tableName: selectedTable?.name || 'Mang đi',
       items: cart.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty, emoji: i.emoji })),
-      total: cartTotal,
+      total: currentOrder ? currentOrder.total : cartTotal,
+      note: orderNote,
+      employeeName: 'Admin',
+      createdAt: new Date().toISOString()
+    };
+
+    const paymentData = {
       paymentMethod,
       transactionCode: paymentMethod !== 'cash' ? paymentForm.transactionCode : '',
-      cashReceived: paymentMethod === 'cash' ? Number(paymentForm.cashAmount) : cartTotal,
-      changeAmount: paymentMethod === 'cash' ? Number(paymentForm.cashAmount) - cartTotal : 0,
-      note: orderNote,
+      cashReceived: paymentMethod === 'cash' ? Number(paymentForm.cashAmount) : orderToPay.total,
+      changeAmount: paymentMethod === 'cash' ? Number(paymentForm.cashAmount) - orderToPay.total : 0,
       status: 'paid',
-    });
+      paidAt: new Date().toISOString(),
+      paidBy: 'Admin'
+    };
 
-    // Update table status if needed
-    if (selectedTable) {
+    let finalOrder;
+    if (currentOrder) {
+      updateOrder(currentOrder.id, paymentData);
+      finalOrder = { ...currentOrder, ...paymentData };
+    } else {
+      finalOrder = addOrder({ ...orderToPay, ...paymentData });
+    }
+
+    if (selectedTable?.id) {
       updateTable(selectedTable.id, { status: 'available' });
     }
 
-    setCurrentOrder(order);
+    setCurrentOrder(finalOrder);
     setShowPayment(false);
     setShowBill(true);
   };
@@ -99,7 +167,7 @@ export default function OrderManagement() {
               <Printer size={18} /> In Bill
             </button>
             <button className="btn btn-success" onClick={resetOrder}>
-              <CheckCircle size={18} /> Tạo Order Mới
+              <CheckCircle size={18} /> Về Danh Sách Bàn
             </button>
           </div>
         </div>
@@ -109,14 +177,14 @@ export default function OrderManagement() {
             <h2>☕ TIỆM TRÀ 9PM</h2>
             <p style={{ fontSize: '0.75rem', color: '#666' }}>Hóa đơn bán hàng</p>
             <p style={{ fontSize: '0.75rem', color: '#999' }}>
-              {new Date(currentOrder.createdAt).toLocaleString('vi-VN')}
+              {new Date(currentOrder.createdAt || currentOrder.paidAt).toLocaleString('vi-VN')}
             </p>
-            <p style={{ fontSize: '0.75rem' }}>Mã: #{currentOrder.id.slice(-8).toUpperCase()}</p>
+            <p style={{ fontSize: '0.75rem' }}>Mã: #{currentOrder.id?.slice(-8).toUpperCase()}</p>
             <p style={{ fontSize: '0.75rem' }}>{currentOrder.tableName}</p>
           </div>
 
           <div className="bill-items">
-            {currentOrder.items.map((item, i) => (
+            {currentOrder.items?.map((item, i) => (
               <div key={i} className="bill-item">
                 <span>{item.qty}x {item.name}</span>
                 <span>{formatMoney(item.price * item.qty)}</span>
@@ -166,8 +234,8 @@ export default function OrderManagement() {
   return (
     <div className="animate-fade-in-up">
       <div className="page-header">
-        <h1>🛒 Order Món</h1>
-        <p>Chọn bàn → Chọn món → Thanh toán</p>
+        <h1>🛒 Order Món (Admin)</h1>
+        <p>Chọn bàn → Chọn món → Lưu order / Thanh toán</p>
       </div>
 
       {/* Table Selection */}
@@ -175,24 +243,30 @@ export default function OrderManagement() {
         <div className="card mb-2">
           <h3 style={{ marginBottom: 16 }}>Chọn Bàn (hoặc bỏ qua cho Mang Đi)</h3>
           <div className="table-grid" style={{ marginBottom: 12 }}>
-            {tables.map(table => (
-              <div key={table.id}
-                className={`table-item ${table.status}`}
-                onClick={() => {
-                  setSelectedTable(table);
-                  updateTable(table.id, { status: 'occupied' });
-                }}
-              >
-                <div className="table-number">{table.name}</div>
-                <div className="table-status" style={{
-                  color: table.status === 'available' ? 'var(--accent-success)' : 'var(--accent-danger)'
-                }}>
-                  {table.status === 'available' ? 'Trống' : 'Đang dùng'}
+            {tables.map(table => {
+              const activeOrder = getActiveOrder(table.id);
+              return (
+                <div key={table.id}
+                  className={`table-item ${table.status}`}
+                  onClick={() => handleSelectTable(table)}
+                  style={activeOrder ? { borderColor: 'var(--accent-warning)', boxShadow: '0 0 15px rgba(245,158,11,0.2)' } : {}}
+                >
+                  <div className="table-number">{table.name}</div>
+                  <div className="table-status" style={{
+                    color: table.status === 'available' ? 'var(--text-muted)' : (activeOrder ? 'var(--accent-warning)' : 'var(--accent-danger)')
+                  }}>
+                    {table.status === 'available' ? 'Trống' : activeOrder ? '⏳ Chưa TT' : 'Đang dùng'}
+                  </div>
+                  {activeOrder && (
+                    <div style={{ fontSize: '0.7rem', color: 'var(--accent-warning)', marginTop: 4 }}>
+                      {activeOrder.items?.length} món · {formatMoney(activeOrder.total)}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-          <button className="btn btn-outline" onClick={() => setSelectedTable({ id: null, name: 'Mang đi' })}>
+          <button className="btn btn-outline" onClick={() => handleSelectTable({ id: null, name: 'Mang đi' })}>
             🛍️ Mang Đi (Không chọn bàn)
           </button>
         </div>
@@ -204,13 +278,41 @@ export default function OrderManagement() {
           {/* Product Catalog */}
           <div className="order-products">
             <div className="flex-between mb-1 no-print">
-              <span className="badge badge-purple" style={{ fontSize: '0.9rem', padding: '6px 14px' }}>
-                📍 {selectedTable.name}
-              </span>
-              <button className="btn btn-outline btn-sm" onClick={() => { setSelectedTable(null); setCart([]); }}>
-                Đổi Bàn
+              <div>
+                <span className="badge badge-purple" style={{ fontSize: '0.9rem', padding: '6px 14px' }}>
+                  📍 {selectedTable.name}
+                </span>
+                {currentOrder && (
+                  <span className="badge badge-warning" style={{ marginLeft: 8 }}>
+                    Đang có order chưa thanh toán
+                  </span>
+                )}
+              </div>
+              <button className="btn btn-outline btn-sm" onClick={() => { setSelectedTable(null); setCart([]); setCurrentOrder(null); }}>
+                ← Đổi Bàn
               </button>
             </div>
+
+            {currentOrder && (
+              <div className="card mb-2" style={{ padding: 16 }}>
+                <h4 style={{ marginBottom: 8 }}>📋 Order hiện tại ({currentOrder.items?.length} món):</h4>
+                {currentOrder.items?.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.85rem' }}>
+                    <span>{item.emoji} {item.qty}x {item.name}</span>
+                    <span className="text-accent">{formatMoney(item.price * item.qty)}</span>
+                  </div>
+                ))}
+                <div style={{ borderTop: '1px solid var(--border-color)', marginTop: 8, paddingTop: 8, fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Tổng hiện tại:</span>
+                  <span className="text-accent">{formatMoney(currentOrder.total)}</span>
+                </div>
+                <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                  <button className="btn btn-success flex-1" onClick={() => setShowPayment(true)}>
+                    <CreditCard size={16} /> Nhận Thanh Toán
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="product-categories">
               <button className={`category-tab ${!selectedCategory ? 'active' : ''}`}
@@ -239,7 +341,7 @@ export default function OrderManagement() {
           {/* Cart */}
           <div className="order-cart no-print">
             <div className="order-cart-header">
-              <span>🛒 Giỏ Hàng ({cart.reduce((s, i) => s + i.qty, 0)} món)</span>
+              <span>🛒 {currentOrder ? 'Thêm Món' : 'Giỏ Hàng'} ({cart.reduce((s, i) => s + i.qty, 0)})</span>
               {cart.length > 0 && (
                 <button className="btn btn-ghost btn-sm text-danger" onClick={() => setCart([])}>Xóa hết</button>
               )}
@@ -249,7 +351,7 @@ export default function OrderManagement() {
               {cart.length === 0 ? (
                 <div className="empty-state" style={{ padding: 24 }}>
                   <ShoppingCart size={36} />
-                  <p>Chưa có món nào</p>
+                  <p>Chưa chọn món nào</p>
                 </div>
               ) : (
                 cart.map(item => (
@@ -278,12 +380,19 @@ export default function OrderManagement() {
                   onChange={(e) => setOrderNote(e.target.value)} style={{ fontSize: '0.85rem' }} />
               </div>
               <div className="cart-total">
-                <span>Tổng cộng:</span>
+                <span>{currentOrder ? 'Tổng thêm:' : 'Tổng cộng:'}</span>
                 <span className="text-accent">{formatMoney(cartTotal)}</span>
               </div>
-              <button className="btn btn-primary btn-block btn-lg" onClick={handleCreateOrder} disabled={cart.length === 0}>
-                <CreditCard size={20} /> Thanh Toán
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn btn-primary flex-1" onClick={handleSaveOrder} disabled={cart.length === 0}>
+                  💾 Lưu Order (Chưa TT)
+                </button>
+                {!currentOrder && (
+                  <button className="btn btn-success flex-1" onClick={() => setShowPayment(true)} disabled={cart.length === 0}>
+                    <CreditCard size={18} /> TT Ngay
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

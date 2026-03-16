@@ -4,21 +4,9 @@ import { useAuth } from '../contexts/AuthContext';
 import Modal from '../components/Modal';
 import { Camera, Clock, Search, Plus, Trash2, CheckCircle, UserCheck, Edit2 } from 'lucide-react';
 
-const DEFAULT_SHIFTS = [
-  { id: 'morning', name: 'Ca Sáng', start: '08:00', end: '12:00' },
-  { id: 'afternoon', name: 'Ca Chiều', start: '12:00', end: '17:00' },
-  { id: 'evening', name: 'Ca Tối', start: '17:00', end: '22:00' },
-  { id: 'full', name: 'Ca Full', start: '08:00', end: '22:00' },
-];
-
-function loadShifts() {
-  try { const d = localStorage.getItem('9pm_shifts'); return d ? JSON.parse(d) : DEFAULT_SHIFTS; } catch { return DEFAULT_SHIFTS; }
-}
-
 export default function Attendance() {
-  const { attendance, addAttendanceRecord, deleteAttendanceRecord, employees } = useData();
+  const { attendance, addAttendanceRecord, deleteAttendanceRecord, employees, shifts, addShift, deleteShift } = useData();
   const { user } = useAuth();
-  const [shifts, setShifts] = useState(loadShifts);
   const [search, setSearch] = useState('');
   const [filterDate, setFilterDate] = useState(new Date().toISOString().slice(0, 10));
   const [showShiftModal, setShowShiftModal] = useState(false);
@@ -27,25 +15,22 @@ export default function Attendance() {
   const [shiftForm, setShiftForm] = useState({ name: '', start: '', end: '' });
   const [manualForm, setManualForm] = useState({ employeeId: '', shiftId: '', type: 'checkin', note: '' });
 
-  useEffect(() => { localStorage.setItem('9pm_shifts', JSON.stringify(shifts)); }, [shifts]);
-
   const filteredRecords = attendance.filter(r => {
     const matchDate = new Date(r.timestamp).toISOString().slice(0, 10) === filterDate;
     const matchSearch = !search || r.employeeName?.toLowerCase().includes(search.toLowerCase());
     return matchDate && matchSearch;
   }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-  const addShift = () => {
+  const handleAddShift = () => {
     if (!shiftForm.name || !shiftForm.start || !shiftForm.end) return;
-    const newShift = { id: 'shift_' + Date.now(), ...shiftForm };
-    setShifts(prev => [...prev, newShift]);
+    addShift({ name: shiftForm.name, start: shiftForm.start, end: shiftForm.end });
     setShiftForm({ name: '', start: '', end: '' });
     setShowShiftModal(false);
   };
 
-  const deleteShift = (id) => {
+  const handleDeleteShift = (id) => {
     if (window.confirm('Xóa ca làm này?')) {
-      setShifts(prev => prev.filter(s => s.id !== id));
+      deleteShift(id);
     }
   };
 
@@ -95,7 +80,7 @@ export default function Attendance() {
                 <div style={{ fontWeight: 600 }}>{shift.name}</div>
                 <div className="text-muted" style={{ fontSize: '0.8rem' }}>{shift.start} - {shift.end}</div>
               </div>
-              <button className="btn btn-ghost btn-sm text-danger" onClick={() => deleteShift(shift.id)}>
+              <button className="btn btn-ghost btn-sm text-danger" onClick={() => handleDeleteShift(shift.id)}>
                 <Trash2 size={14} />
               </button>
             </div>
@@ -185,7 +170,7 @@ export default function Attendance() {
       {/* Add Shift Modal */}
       <Modal isOpen={showShiftModal} onClose={() => setShowShiftModal(false)} title="Thêm Ca Làm"
         footer={<><button className="btn btn-outline" onClick={() => setShowShiftModal(false)}>Hủy</button>
-          <button className="btn btn-primary" onClick={addShift}>Thêm</button></>}>
+          <button className="btn btn-primary" onClick={handleAddShift}>Thêm</button></>}>
         <div className="form-group"><label>Tên Ca Làm *</label>
           <input type="text" className="form-control" placeholder="VD: Ca Khuya"
             value={shiftForm.name} onChange={(e) => setShiftForm({ ...shiftForm, name: e.target.value })} /></div>

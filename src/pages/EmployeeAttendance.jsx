@@ -3,23 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import { Camera, CameraOff, CheckCircle, Clock, User } from 'lucide-react';
 
-const DEFAULT_SHIFTS = [
-  { id: 'morning', name: 'Ca Sáng', start: '08:00', end: '12:00' },
-  { id: 'afternoon', name: 'Ca Chiều', start: '12:00', end: '17:00' },
-  { id: 'evening', name: 'Ca Tối', start: '17:00', end: '22:00' },
-  { id: 'full', name: 'Ca Full', start: '08:00', end: '22:00' },
-];
-
-function getStoredShifts() {
-  try {
-    const d = localStorage.getItem('9pm_shifts');
-    return d ? JSON.parse(d) : DEFAULT_SHIFTS;
-  } catch { return DEFAULT_SHIFTS; }
-}
-
 export default function EmployeeAttendance() {
   const { user } = useAuth();
-  const { attendance, addAttendanceRecord } = useData();
+  const { attendance, addAttendanceRecord, shifts } = useData();
   const [selectedShift, setSelectedShift] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState(null);
@@ -28,7 +14,6 @@ export default function EmployeeAttendance() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
-  const shifts = getStoredShifts();
 
   const startCamera = async () => {
     try {

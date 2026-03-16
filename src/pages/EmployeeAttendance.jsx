@@ -172,44 +172,44 @@ export default function EmployeeAttendance() {
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              {!cameraActive ? (
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                muted
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'cover', 
+                  display: (cameraActive && !capturedPhoto) ? 'block' : 'none' 
+                }} 
+              />
+              {!cameraActive && (
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', position: 'absolute' }}>
                   <CameraOff size={40} style={{ marginBottom: 8, opacity: 0.5, display: 'inline-block' }} />
                   <p style={{ margin: 0 }}>Bật camera để chấm công</p>
                 </div>
-              ) : (
-                <>
-                  <video 
-                    ref={videoRef} 
-                    autoPlay 
-                    playsInline 
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
-                      objectFit: 'cover', 
-                      display: capturedPhoto ? 'none' : 'block' 
-                    }} 
-                  />
-                  {capturedPhoto && (
-                    <img 
-                      src={capturedPhoto} 
-                      alt="Captured" 
-                      style={{ 
-                        width: '100%', 
-                        height: '100%', 
-                        objectFit: 'cover' 
-                      }} 
-                    />
-                  )}
-                  {!capturedPhoto && (
-                    <div className="camera-overlay" style={{ 
-                      position: 'absolute', 
-                      top: 0, left: 0, right: 0, bottom: 0, 
-                      border: '2px solid rgba(255,255,255,0.2)',
-                      pointerEvents: 'none'
-                    }} />
-                  )}
-                </>
+              )}
+              {cameraActive && capturedPhoto && (
+                <img 
+                  src={capturedPhoto} 
+                  alt="Captured" 
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'cover',
+                    position: 'absolute',
+                    top: 0, left: 0
+                  }} 
+                />
+              )}
+              {cameraActive && !capturedPhoto && (
+                <div className="camera-overlay" style={{ 
+                  position: 'absolute', 
+                  top: 0, left: 0, right: 0, bottom: 0, 
+                  border: '2px solid rgba(255,255,255,0.2)',
+                  pointerEvents: 'none'
+                }} />
               )}
               <canvas ref={canvasRef} style={{ display: 'none' }} />
             </div>

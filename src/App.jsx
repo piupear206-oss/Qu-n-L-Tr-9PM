@@ -17,7 +17,7 @@ import EmployeeAttendance from './pages/EmployeeAttendance';
 import Notifications from './pages/Notifications';
 import MySalary from './pages/MySalary';
 import UserProfile from './pages/UserProfile';
-import { Lock, Eye, EyeOff } from 'lucide-react';
+import { Lock, Eye, EyeOff, Menu } from 'lucide-react';
 
 function LoginPage() {
   const { login, register, resetPassword } = useAuth();
@@ -206,6 +206,7 @@ function AppContent() {
     if (!user) return 'dashboard';
     return user.role === 'admin' ? 'dashboard' : 'employee-order';
   });
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const notificationCount = useMemo(() => {
     if (!user || user.role !== 'admin') return 0;
@@ -245,10 +246,49 @@ function AppContent() {
     }
   };
 
+  const getPageTitle = (page) => {
+    const titles = {
+      'dashboard': 'Tổng Quan',
+      'employees': 'Nhân Viên',
+      'salary': 'Bảng Lương',
+      'attendance': 'Chấm Công',
+      'inventory': 'Nguồn Hàng',
+      'finance': 'Thu Chi',
+      'tables': 'Số Bàn',
+      'products': 'Sản Phẩm',
+      'orders': 'Order Món',
+      'order-history': 'Lịch Sử',
+      'notifications': 'Thông Báo',
+      'profile': 'Hồ Sơ',
+      'employee-order': 'Order Món',
+      'employee-attendance': 'Chấm Công',
+      'my-salary': 'Bảng Lương'
+    };
+    return titles[page] || 'Tiệm Trà 9PM';
+  };
+
   return (
     <div className="app-layout">
-      <Sidebar activePage={activePage} onNavigate={setActivePage} notificationCount={notificationCount} />
-      <main className="main-content">{renderPage()}</main>
+      {/* Mobile Top Header */}
+      <div className="mobile-header">
+        <button className="mobile-menu-btn" onClick={() => setIsMobileSidebarOpen(true)}>
+          <Menu size={24} />
+        </button>
+        <div className="mobile-title">{getPageTitle(activePage)}</div>
+        <div style={{ width: 24 }}></div> {/* Spacer for centering */}
+      </div>
+
+      <Sidebar 
+        activePage={activePage} 
+        onNavigate={setActivePage} 
+        notificationCount={notificationCount} 
+        isOpen={isMobileSidebarOpen}
+        onToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+      />
+      
+      <main className="main-content">
+        {renderPage()}
+      </main>
     </div>
   );
 }

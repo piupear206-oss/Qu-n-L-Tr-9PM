@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard, Users, Package, DollarSign, Armchair,
   ShoppingCart, Coffee, ClipboardList, Camera, Calculator,
-  LogOut, Bell, User
+  LogOut, Bell, User, X
 } from 'lucide-react';
 
 const adminNav = [
@@ -41,62 +41,80 @@ const employeeNav = [
   ]},
 ];
 
-export default function Sidebar({ activePage, onNavigate, notificationCount = 0 }) {
+export default function Sidebar({ activePage, onNavigate, notificationCount = 0, isOpen, onToggle }) {
   const { user, logout } = useAuth();
   const isAdmin = user?.role === 'admin';
   const navItems = isAdmin ? adminNav : employeeNav;
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-        <div className="logo-icon">🍵</div>
-        <div className="logo-text">
-          <h2>Tiệm Trà 9PM</h2>
-          <p>{isAdmin ? 'Quản Trị Viên' : 'Nhân Viên'}</p>
-        </div>
-      </div>
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="sidebar-overlay" 
+          onClick={onToggle}
+        />
+      )}
 
-      <nav className="sidebar-nav">
-        {navItems.map((section) => (
-          <div key={section.section} className="sidebar-section">
-            <div className="sidebar-section-title">{section.section}</div>
-            {section.items.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  className={`nav-item ${activePage === item.id ? 'active' : ''}`}
-                  onClick={() => onNavigate(item.id)}
-                >
-                  <Icon size={20} />
-                  <span>{item.label}</span>
-                  {item.id === 'notifications' && notificationCount > 0 && (
-                    <span className="badge badge-danger" style={{
-                      marginLeft: 'auto', minWidth: 22, textAlign: 'center',
-                      animation: 'pulse 1.5s infinite'
-                    }}>
-                      {notificationCount}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+        <div className="sidebar-header">
+          <div className="logo-icon">🍵</div>
+          <div className="logo-text">
+            <h2>Tiệm Trà 9PM</h2>
+            <p>{isAdmin ? 'Quản Trị Viên' : 'Nhân Viên'}</p>
           </div>
-        ))}
-      </nav>
-
-      <div className="sidebar-footer">
-        <div className="sidebar-user" onClick={logout}>
-          <div className="avatar">
-            {user?.name?.charAt(0) || 'A'}
-          </div>
-          <div className="user-info">
-            <div className="name">{user?.name || 'User'}</div>
-            <div className="role">{isAdmin ? 'Quản Trị Viên' : 'Nhân Viên'}</div>
-          </div>
-          <LogOut size={18} style={{ color: 'var(--text-muted)' }} />
+          <button className="mobile-close-btn" onClick={onToggle}>
+            <X size={24} />
+          </button>
         </div>
-      </div>
-    </aside>
+
+        <nav className="sidebar-nav">
+          {navItems.map((section) => (
+            <div key={section.section} className="sidebar-section">
+              <div className="sidebar-section-title">{section.section}</div>
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    className={`nav-item ${activePage === item.id ? 'active' : ''}`}
+                    onClick={() => {
+                      onNavigate(item.id);
+                      if (window.innerWidth <= 768) {
+                        onToggle();
+                      }
+                    }}
+                  >
+                    <Icon size={20} />
+                    <span>{item.label}</span>
+                    {item.id === 'notifications' && notificationCount > 0 && (
+                      <span className="badge badge-danger" style={{
+                        marginLeft: 'auto', minWidth: 22, textAlign: 'center',
+                        animation: 'pulse 1.5s infinite'
+                      }}>
+                        {notificationCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="sidebar-user" onClick={logout}>
+            <div className="avatar">
+              {user?.name?.charAt(0) || 'A'}
+            </div>
+            <div className="user-info">
+              <div className="name">{user?.name || 'User'}</div>
+              <div className="role">{isAdmin ? 'Quản Trị Viên' : 'Nhân Viên'}</div>
+            </div>
+            <LogOut size={18} style={{ color: 'var(--text-muted)' }} />
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }

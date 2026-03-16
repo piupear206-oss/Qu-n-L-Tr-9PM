@@ -5,7 +5,7 @@ import Modal from '../components/Modal';
 import { ClipboardList, Search, Eye, Printer, Trash2, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export default function OrderHistory() {
-  const { orders, deleteOrder, updateOrder } = useData();
+  const { orders, deleteOrder, updateOrder, updateTable } = useData();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
   const [search, setSearch] = useState('');
@@ -30,6 +30,9 @@ export default function OrderHistory() {
     if (deleteStep === 0) {
       setDeleteStep(1);
     } else {
+      if (showDeleteConfirm.status === 'pending' && showDeleteConfirm.tableId) {
+        updateTable(showDeleteConfirm.tableId, { status: 'available' });
+      }
       deleteOrder(showDeleteConfirm.id);
       setShowDeleteConfirm(null);
       setDeleteStep(0);
@@ -39,6 +42,9 @@ export default function OrderHistory() {
   const markAsPaid = (order) => {
     if (window.confirm(`Xác nhận đơn ${order.tableName} - ${formatMoney(order.total)} đã thanh toán?`)) {
       updateOrder(order.id, { status: 'paid', paidAt: new Date().toISOString(), paidBy: user?.name || 'Admin' });
+      if (order.tableId) {
+        updateTable(order.tableId, { status: 'available' });
+      }
     }
   };
 

@@ -204,12 +204,12 @@ function AppContent() {
   const { orders } = useData();
   const [activePage, setActivePage] = useState(() => {
     if (!user) return 'dashboard';
-    return user.role === 'admin' ? 'dashboard' : 'employee-order';
+    return (user.role === 'admin' || user.role === 'manager') ? 'dashboard' : 'employee-order';
   });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const notificationCount = useMemo(() => {
-    if (!user || user.role !== 'admin') return 0;
+    if (!user || (user.role !== 'admin' && user.role !== 'manager')) return 0;
     let count = 0;
     orders.forEach(order => { order.notifications?.forEach(n => { if (!n.read) count++; }); });
     return count;
@@ -218,7 +218,7 @@ function AppContent() {
   if (!user) return <LoginPage />;
 
   const renderPage = () => {
-    if (user.role === 'admin') {
+    if (user.role === 'admin' || user.role === 'manager') {
       switch (activePage) {
         case 'dashboard': return <Dashboard />;
         case 'employees': return <EmployeeManagement />;

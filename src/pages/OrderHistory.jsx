@@ -7,7 +7,7 @@ import { ClipboardList, Search, Eye, Printer, Trash2, AlertTriangle, CheckCircle
 export default function OrderHistory() {
   const { orders, deleteOrder, updateOrder } = useData();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);

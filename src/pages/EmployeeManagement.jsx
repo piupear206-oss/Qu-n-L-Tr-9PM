@@ -63,7 +63,8 @@ export default function EmployeeManagement() {
       return;
     }
     const emp = employees.find(e => e.id === accountForm.employeeId);
-    const result = createEmployeeAccount(accountForm.employeeId, emp?.name || '', accountForm.username, accountForm.password);
+    const role = emp?.position === 'Quản Lí' ? 'manager' : 'employee';
+    const result = createEmployeeAccount(accountForm.employeeId, emp?.name || '', accountForm.username, accountForm.password, role);
     if (result.success) {
       setAccountMsg({ type: 'success', text: `Tạo tài khoản "${accountForm.username}" thành công!` });
       setTimeout(() => setShowAccountModal(false), 1500);

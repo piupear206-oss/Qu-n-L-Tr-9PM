@@ -43,7 +43,7 @@ const employeeNav = [
 
 export default function Sidebar({ activePage, onNavigate, notificationCount = 0, isOpen, onToggle }) {
   const { user, logout } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
   const navItems = isAdmin ? adminNav : employeeNav;
 
   return (
@@ -61,7 +61,7 @@ export default function Sidebar({ activePage, onNavigate, notificationCount = 0,
           <div className="logo-icon">🍵</div>
           <div className="logo-text">
             <h2>Tiệm Trà 9PM</h2>
-            <p>{isAdmin ? 'Quản Trị Viên' : 'Nhân Viên'}</p>
+            <p>{user?.role === 'admin' ? 'Quản Trị Viên' : user?.role === 'manager' ? 'Quản Lí' : 'Nhân Viên'}</p>
           </div>
           <button className="mobile-close-btn" onClick={onToggle}>
             <X size={24} />
@@ -109,7 +109,7 @@ export default function Sidebar({ activePage, onNavigate, notificationCount = 0,
             </div>
             <div className="user-info">
               <div className="name">{user?.name || 'User'}</div>
-              <div className="role">{isAdmin ? 'Quản Trị Viên' : 'Nhân Viên'}</div>
+              <div className="role">{user?.role === 'admin' ? 'Quản Trị Viên' : user?.role === 'manager' ? 'Quản Lí' : 'Nhân Viên'}</div>
             </div>
             <LogOut size={18} style={{ color: 'var(--text-muted)' }} />
           </div>

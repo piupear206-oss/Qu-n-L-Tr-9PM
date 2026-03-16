@@ -131,13 +131,13 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const isAdmin = () => user?.role === 'admin';
+  const isAdmin = () => user?.role === 'admin' || user?.role === 'manager';
 
-  const createEmployeeAccount = (employeeId, employeeName, username, password) => {
+  const createEmployeeAccount = (employeeId, employeeName, username, password, role = 'employee') => {
     if (users.find(u => u.username === username)) {
       return { success: false, message: 'Tên đăng nhập đã tồn tại!' };
     }
-    const newUser = { id: 'emp_' + Date.now(), username, password, name: employeeName, role: 'employee', employeeId };
+    const newUser = { id: 'emp_' + Date.now(), username, password, name: employeeName, role, employeeId };
     const updated = [...users, newUser];
     setUsers(updated);
     set(ref(db, '9pm_users'), updated);
@@ -174,7 +174,7 @@ export function AuthProvider({ children }) {
     set(ref(db, '9pm_users'), updated);
   };
 
-  const getEmployeeAccounts = () => users.filter(u => u.role === 'employee');
+  const getEmployeeAccounts = () => users.filter(u => u.role !== 'admin');
 
   return (
     <AuthContext.Provider value={{ 

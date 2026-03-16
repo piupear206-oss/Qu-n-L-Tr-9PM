@@ -36,11 +36,11 @@ export default function UserProfile() {
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
             <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg-lighter)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>
-              {user?.role === 'admin' ? '👑' : '🧑‍🍳'}
+              {user?.role === 'admin' ? '👑' : user?.role === 'manager' ? '💼' : '🧑‍🍳'}
             </div>
             <div>
               <h2 style={{ margin: '0 0 4px 0' }}>{user?.name}</h2>
-              <div style={{ color: 'var(--text-muted)' }}>@{user?.username} · {user?.role === 'admin' ? 'Quản Trị Viên' : 'Nhân Viên'}</div>
+              <div style={{ color: 'var(--text-muted)' }}>@{user?.username} · {user?.role === 'admin' ? 'Quản Trị Viên' : user?.role === 'manager' ? 'Quản Lí' : 'Nhân Viên'}</div>
             </div>
           </div>
         </div>

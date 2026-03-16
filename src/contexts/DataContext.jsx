@@ -127,6 +127,21 @@ export function DataProvider({ children }) {
     setEmployees(updated); saveAll('employees', updated);
   };
 
+  // Category CRUD
+  const addCategory = (cat) => {
+    const newCat = { ...cat, id: generateId() };
+    const updated = [...categories, newCat];
+    setCategories(updated); saveAll('categories', updated);
+    return newCat;
+  };
+  const deleteCategory = (id) => {
+    const updatedCats = categories.filter(c => c.id !== id);
+    setCategories(updatedCats); saveAll('categories', updatedCats);
+    // Also delete all products belonging to this category
+    const updatedProds = products.filter(p => p.categoryId !== id);
+    setProducts(updatedProds); saveAll('products', updatedProds);
+  };
+
   // Product CRUD
   const addProduct = (prod) => {
     const newProd = { ...prod, id: generateId() };
@@ -242,7 +257,7 @@ export function DataProvider({ children }) {
   const value = {
     employees, addEmployee, updateEmployee, deleteEmployee,
     products, addProduct, updateProduct, deleteProduct,
-    categories,
+    categories, addCategory, deleteCategory,
     tables, addTable, updateTable, deleteTable,
     orders, addOrder, updateOrder, deleteOrder,
     inventory, addInventoryItem, updateInventoryItem, deleteInventoryItem,

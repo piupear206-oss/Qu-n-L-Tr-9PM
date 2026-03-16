@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { useData } from '../contexts/DataContext';
 import Modal from '../components/Modal';
-import { Coffee, Plus, Edit2, Trash2, Search } from 'lucide-react';
+import { Coffee, Plus, Edit2, Trash2, Search, Tag, X } from 'lucide-react';
 
 export default function ProductManagement() {
-  const { products, categories, addProduct, updateProduct, deleteProduct } = useData();
+  const { products, categories, addProduct, updateProduct, deleteProduct, addCategory, deleteCategory } = useData();
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [form, setForm] = useState({ name: '', price: '', categoryId: '', emoji: '🧋', description: '' });
+
+  // Category management state
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [categoryForm, setCategoryForm] = useState({ name: '', emoji: '🍵' });
 
   const filteredProducts = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -45,18 +49,85 @@ export default function ProductManagement() {
     if (window.confirm('Xóa sản phẩm này?')) deleteProduct(id);
   };
 
+  // Category handlers
+  const handleAddCategory = (e) => {
+    e.preventDefault();
+    if (!categoryForm.name.trim()) return;
+    addCategory({ name: categoryForm.name.trim(), emoji: categoryForm.emoji });
+    setCategoryForm({ name: '', emoji: '🍵' });
+    setShowCategoryModal(false);
+  };
+
+  const handleDeleteCategory = (cat) => {
+    const productCount = products.filter(p => p.categoryId === cat.id).length;
+    const msg = productCount > 0
+      ? `Xóa danh mục "${cat.name}"?\n\n⚠️ ${productCount} sản phẩm thuộc danh mục này cũng sẽ bị xóa!`
+      : `Xóa danh mục "${cat.name}"?`;
+    if (window.confirm(msg)) {
+      if (filterCategory === cat.id) setFilterCategory('');
+      deleteCategory(cat.id);
+    }
+  };
+
   const getCategoryName = (id) => categories.find(c => c.id === id)?.name || '';
   const formatMoney = (n) => new Intl.NumberFormat('vi-VN').format(n) + 'đ';
 
   const emojiOptions = ['🧋', '🍵', '☕', '🍊', '🍑', '🍋', '🫐', '🍓', '🥑', '🧊', '🍫', '🥥', '⚫', '🍟', '🥟', '🍿', '🧁', '🍰', '🥤', '🍹'];
+  const categoryEmojiOptions = ['🍵', '🧋', '☕', '🥤', '🍹', '🍊', '🍑', '🍓', '🫐', '🧊', '🍫', '🍿', '🧁', '🍰', '🍟', '🥟', '🌽', '🍢', '🌹', '🌻', '🥑', '🥥'];
 
   return (
     <div className="animate-fade-in-up">
       <div className="page-header">
         <h1>🧋 Quản Lí Sản Phẩm</h1>
-        <p>Thêm, sửa, xóa sản phẩm trong menu</p>
+        <p>Thêm, sửa, xóa sản phẩm và danh mục trong menu</p>
       </div>
 
+      {/* Category Management Section */}
+      <div className="card mb-2" style={{ padding: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Tag size={20} /> Danh Mục ({categories.length})
+          </h3>
+          <button className="btn btn-outline btn-sm" onClick={() => setShowCategoryModal(true)}>
+            <Plus size={16} /> Thêm Danh Mục
+          </button>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {categories.map(cat => {
+            const count = products.filter(p => p.categoryId === cat.id).length;
+            return (
+              <div key={cat.id} style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 14px', borderRadius: 12,
+                background: 'rgba(124,58,237,0.08)',
+                border: '1px solid rgba(124,58,237,0.2)',
+                fontSize: '0.9rem',
+              }}>
+                <span>{cat.emoji} {cat.name}</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({count})</span>
+                <button
+                  onClick={() => handleDeleteCategory(cat)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--accent-danger)', padding: 2, display: 'flex',
+                    alignItems: 'center', opacity: 0.6, transition: '0.15s',
+                  }}
+                  onMouseEnter={(e) => e.target.style.opacity = 1}
+                  onMouseLeave={(e) => e.target.style.opacity = 0.6}
+                  title={`Xóa danh mục ${cat.name}`}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            );
+          })}
+          {categories.length === 0 && (
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Chưa có danh mục nào</span>
+          )}
+        </div>
+      </div>
+
+      {/* Product Toolbar */}
       <div className="toolbar">
         <div className="toolbar-left">
           <div className="search-input">
@@ -107,6 +178,7 @@ export default function ProductManagement() {
         </div>
       )}
 
+      {/* Add/Edit Product Modal */}
       <Modal isOpen={showModal} onClose={() => setShowModal(false)}
         title={editingProduct ? 'Sửa Sản Phẩm' : 'Thêm Sản Phẩm Mới'}
         footer={<>
@@ -155,6 +227,39 @@ export default function ProductManagement() {
             <label>Mô Tả</label>
             <textarea className="form-control" placeholder="Mô tả sản phẩm..."
               value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          </div>
+        </form>
+      </Modal>
+
+      {/* Add Category Modal */}
+      <Modal isOpen={showCategoryModal} onClose={() => setShowCategoryModal(false)}
+        title="Thêm Danh Mục Mới"
+        footer={<>
+          <button className="btn btn-outline" onClick={() => setShowCategoryModal(false)}>Hủy</button>
+          <button className="btn btn-primary" onClick={handleAddCategory}>Thêm Danh Mục</button>
+        </>}
+      >
+        <form onSubmit={handleAddCategory}>
+          <div className="form-group">
+            <label>Icon Danh Mục</label>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {categoryEmojiOptions.map(e => (
+                <button key={e} type="button" onClick={() => setCategoryForm({ ...categoryForm, emoji: e })}
+                  style={{
+                    fontSize: '1.5rem', padding: '6px 8px',
+                    background: categoryForm.emoji === e ? 'rgba(124,58,237,0.2)' : 'transparent',
+                    border: categoryForm.emoji === e ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                    borderRadius: 8, cursor: 'pointer', transition: '0.15s'
+                  }}>
+                  {e}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="form-group">
+            <label>Tên Danh Mục *</label>
+            <input type="text" className="form-control" placeholder="VD: Trà Sữa, Coffee, Đồ Ăn Vặt..."
+              value={categoryForm.name} onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })} required />
           </div>
         </form>
       </Modal>

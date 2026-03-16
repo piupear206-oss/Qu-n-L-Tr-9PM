@@ -6,7 +6,7 @@ import { Users, Plus, Edit2, Trash2, Search, Phone, KeyRound, UserPlus } from 'l
 
 export default function EmployeeManagement() {
   const { employees, addEmployee, updateEmployee, deleteEmployee } = useData();
-  const { createEmployeeAccount, deleteEmployeeAccount, getEmployeeAccounts } = useAuth();
+  const { createEmployeeAccount, deleteEmployeeAccount, getEmployeeAccounts, updateEmployeeRole } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
@@ -37,8 +37,12 @@ export default function EmployeeManagement() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.name.trim()) return;
+    
     if (editingEmployee) {
       updateEmployee(editingEmployee.id, form);
+      // Synchronize role if position changed (only for existing accounts)
+      const role = form.position === 'Quản Lí' ? 'manager' : 'employee';
+      updateEmployeeRole(editingEmployee.id, role);
     } else {
       addEmployee(form);
     }

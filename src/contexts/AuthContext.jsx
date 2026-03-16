@@ -176,10 +176,25 @@ export function AuthProvider({ children }) {
 
   const getEmployeeAccounts = () => users.filter(u => u.role !== 'admin');
 
+  const updateEmployeeRole = (employeeId, newRole) => {
+    const userIndex = users.findIndex(u => u.employeeId === employeeId);
+    if (userIndex !== -1 && users[userIndex].role !== 'admin') {
+      const updated = [...users];
+      updated[userIndex].role = newRole;
+      setUsers(updated);
+      set(ref(db, '9pm_users'), updated);
+      
+      // If updating the current user, update their local session
+      if (user && user.employeeId === employeeId) {
+        setUser({ ...user, role: newRole });
+      }
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, sessions, login, logout, logoutSession, register, resetPassword, 
-      isAdmin, createEmployeeAccount, deleteEmployeeAccount, getEmployeeAccounts 
+      isAdmin, createEmployeeAccount, deleteEmployeeAccount, getEmployeeAccounts, updateEmployeeRole 
     }}>
       {children}
     </AuthContext.Provider>

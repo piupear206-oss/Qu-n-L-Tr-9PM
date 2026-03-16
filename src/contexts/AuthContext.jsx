@@ -58,6 +58,21 @@ export function AuthProvider({ children }) {
     return () => { unsubUsers(); unsubSessions(); };
   }, []);
 
+  // Sync local session if user data changes remotely (e.g., admin changes their role)
+  useEffect(() => {
+    if (users.length > 0) {
+      setUser(currentUser => {
+        if (!currentUser) return null;
+        const dbUser = users.find(u => u.id === currentUser.id);
+        if (!dbUser) return null; // account was deleted
+        if (dbUser.role !== currentUser.role || dbUser.name !== currentUser.name) {
+          return { ...currentUser, role: dbUser.role, name: dbUser.name };
+        }
+        return currentUser;
+      });
+    }
+  }, [users]);
+
   useEffect(() => {
     if (user) {
       localStorage.setItem(SESSION_KEY, JSON.stringify(user));

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
+import { useAuth } from '../contexts/AuthContext';
 import Modal from '../components/Modal';
 import { Camera, Clock, Search, Plus, Trash2, CheckCircle, UserCheck, Edit2 } from 'lucide-react';
 
@@ -16,6 +17,7 @@ function loadShifts() {
 
 export default function Attendance() {
   const { attendance, addAttendanceRecord, deleteAttendanceRecord, employees } = useData();
+  const { user } = useAuth();
   const [shifts, setShifts] = useState(loadShifts);
   const [search, setSearch] = useState('');
   const [filterDate, setFilterDate] = useState(new Date().toISOString().slice(0, 10));
@@ -63,8 +65,9 @@ export default function Attendance() {
       isLate: false,
       lateMinutes: 0,
       method: 'manual',
-      note: manualForm.note || 'Admin xác nhận thủ công',
+      note: manualForm.note || `${user?.name || 'Quản lí'} xác nhận thủ công`,
       approvedByAdmin: true,
+      approvedBy: user?.name || 'Quản lí',
     });
     setShowManualModal(false);
     setManualForm({ employeeId: '', shiftId: '', type: 'checkin', note: '' });
@@ -164,7 +167,7 @@ export default function Attendance() {
                   </td>
                   <td>
                     {r.isLate && <span className="badge badge-danger">Trễ {r.lateMinutes}p</span>}
-                    {r.approvedByAdmin && <span className="badge badge-success" style={{ marginLeft: 4 }}>Admin ✓</span>}
+                    {r.approvedByAdmin && <span className="badge badge-success" style={{ marginLeft: 4 }}>Duyệt ✓</span>}
                     {!r.isLate && !r.approvedByAdmin && <span className="badge badge-success">Đúng giờ</span>}
                   </td>
                   <td>
@@ -197,7 +200,7 @@ export default function Attendance() {
       </Modal>
 
       {/* Manual Check-in Modal */}
-      <Modal isOpen={showManualModal} onClose={() => setShowManualModal(false)} title="Chấm Công Thủ Công (Admin)"
+      <Modal isOpen={showManualModal} onClose={() => setShowManualModal(false)} title="Chấm Công Thủ Công"
         footer={<><button className="btn btn-outline" onClick={() => setShowManualModal(false)}>Hủy</button>
           <button className="btn btn-success" onClick={handleManualCheckin}><UserCheck size={16} /> Xác Nhận</button></>}>
         <div style={{ padding: '10px 16px', marginBottom: 16, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 8, fontSize: '0.85rem', color: 'var(--accent-warning)' }}>
@@ -223,7 +226,7 @@ export default function Attendance() {
               onClick={() => setManualForm({ ...manualForm, type: 'checkout' })}>Check-out</button>
           </div></div>
         <div className="form-group"><label>Ghi Chú</label>
-          <input type="text" className="form-control" placeholder="VD: Quên chấm công, admin xác nhận"
+          <input type="text" className="form-control" placeholder={`VD: Quên chấm công, ${user?.name || 'quản lí'} xác nhận`}
             value={manualForm.note} onChange={(e) => setManualForm({ ...manualForm, note: e.target.value })} /></div>
       </Modal>
 
@@ -235,7 +238,7 @@ export default function Attendance() {
             <div style={{ marginTop: 16 }}>
               <p style={{ fontWeight: 600, fontSize: '1.1rem' }}>{showPhotoModal.employeeName}</p>
               <p className="text-muted">{showPhotoModal.shiftName} · {showPhotoModal.actualTime} · {new Date(showPhotoModal.timestamp).toLocaleDateString('vi-VN')}</p>
-              <p>{showPhotoModal.method === 'manual' ? '✋ Thủ công (Admin xác nhận)' : '📸 Camera'}</p>
+              <p>{showPhotoModal.method === 'manual' ? `✋ Thủ công (${showPhotoModal.approvedBy || 'Quản lí'} xác nhận)` : '📸 Camera'}</p>
               {showPhotoModal.isLate && <p className="text-danger">⚠️ Trễ {showPhotoModal.lateMinutes} phút</p>}
             </div>
           </div>

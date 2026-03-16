@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useData } from '../contexts/DataContext';
+import { useAuth } from '../contexts/AuthContext';
 import Modal from '../components/Modal';
 import { ShoppingCart, Minus, Plus, X, Printer, CreditCard, Banknote, Smartphone, CheckCircle } from 'lucide-react';
 
 export default function OrderManagement() {
   const { products, categories, tables, orders, addOrder, updateTable, updateOrder } = useData();
+  const { user } = useAuth();
   const [selectedTable, setSelectedTable] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [cart, setCart] = useState([]);
@@ -83,7 +85,7 @@ export default function OrderManagement() {
       updateOrder(currentOrder.id, {
         items: updatedItems,
         total: newTotal,
-        lastUpdatedBy: 'Admin',
+        lastUpdatedBy: user?.name || 'Admin',
         lastUpdatedAt: new Date().toISOString(),
       });
     } else {
@@ -95,7 +97,7 @@ export default function OrderManagement() {
         total: cartTotal,
         note: orderNote,
         status: 'pending',
-        employeeName: 'Admin',
+        employeeName: user?.name || 'Admin',
       });
     }
     setCart([]);
@@ -112,7 +114,7 @@ export default function OrderManagement() {
       items: cart.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty, emoji: i.emoji })),
       total: currentOrder ? currentOrder.total : cartTotal,
       note: orderNote,
-      employeeName: 'Admin',
+      employeeName: user?.name || 'Admin',
       createdAt: new Date().toISOString()
     };
 
@@ -123,7 +125,7 @@ export default function OrderManagement() {
       changeAmount: paymentMethod === 'cash' ? Number(paymentForm.cashAmount) - orderToPay.total : 0,
       status: 'paid',
       paidAt: new Date().toISOString(),
-      paidBy: 'Admin'
+      paidBy: user?.name || 'Admin'
     };
 
     let finalOrder;
@@ -234,7 +236,7 @@ export default function OrderManagement() {
   return (
     <div className="animate-fade-in-up">
       <div className="page-header">
-        <h1>🛒 Order Món (Admin)</h1>
+        <h1>🛒 Order Món ({user?.role === 'manager' ? 'Quản Lí' : 'Admin'})</h1>
         <p>Chọn bàn → Chọn món → Lưu order / Thanh toán</p>
       </div>
 

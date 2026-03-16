@@ -82,11 +82,19 @@ export default function OrderManagement() {
         }
       });
       const newTotal = updatedItems.reduce((sum, i) => sum + i.price * i.qty, 0);
+      const addedItemsMsg = cart.map(c => `${c.qty}x ${c.name}`).join(', ');
       updateOrder(currentOrder.id, {
         items: updatedItems,
         total: newTotal,
         lastUpdatedBy: user?.name || 'Admin',
         lastUpdatedAt: new Date().toISOString(),
+        notifications: [...(currentOrder.notifications || []), {
+          id: Date.now().toString(),
+          type: 'update_order',
+          message: `Thêm món: ${addedItemsMsg}`,
+          time: new Date().toISOString(),
+          read: false
+        }]
       });
     } else {
       // Create new pending order
@@ -98,6 +106,13 @@ export default function OrderManagement() {
         note: orderNote,
         status: 'pending',
         employeeName: user?.name || 'Admin',
+        notifications: [{
+          id: Date.now().toString(),
+          type: 'new_order',
+          message: `Order mới: ${selectedTable?.name || 'Bàn Khách mang đi'}`,
+          time: new Date().toISOString(),
+          read: false
+        }]
       });
     }
     setCart([]);
@@ -115,7 +130,14 @@ export default function OrderManagement() {
       total: currentOrder ? currentOrder.total : cartTotal,
       note: orderNote,
       employeeName: user?.name || 'Admin',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      notifications: currentOrder ? currentOrder.notifications : [{
+        id: Date.now().toString(),
+        type: 'new_order',
+        message: `Order mới: ${selectedTable?.name || 'Bàn Khách mang đi'}`,
+        time: new Date().toISOString(),
+        read: false
+      }]
     };
 
     const paymentData = {

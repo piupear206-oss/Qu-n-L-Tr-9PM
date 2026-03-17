@@ -29,6 +29,21 @@ export default function UserProfile() {
     alert('✅ Đã lưu cấu hình thanh toán thành công!');
   };
 
+  const handleImageUpload = (e, field) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Vui lòng chọn ảnh nhỏ hơn 2MB');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPaymentForm(prev => ({ ...prev, [field]: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const getDeviceIcon = (userAgent) => {
     const ua = userAgent?.toLowerCase() || '';
     if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) {
@@ -148,9 +163,9 @@ export default function UserProfile() {
                   <input type="text" className="form-control" value={paymentForm.accountNumber} onChange={(e) => setPaymentForm({...paymentForm, accountNumber: e.target.value})} />
                 </div>
                 <div className="form-group">
-                  <label>Link Ảnh QR Ngân Hàng</label>
-                  <input type="text" className="form-control" placeholder="https://..." value={paymentForm.bankQr} onChange={(e) => setPaymentForm({...paymentForm, bankQr: e.target.value})} />
-                  {paymentForm.bankQr && <img src={paymentForm.bankQr} alt="QR Ngân Hàng" style={{ marginTop: 8, maxWidth: 120, borderRadius: 8 }} />}
+                  <label>Tải Ảnh QR Ngân Hàng Tên Lên</label>
+                  <input type="file" accept="image/*" className="form-control" onChange={(e) => handleImageUpload(e, 'bankQr')} style={{ padding: '8px 12px' }} />
+                  {paymentForm.bankQr && <img src={paymentForm.bankQr} alt="QR Ngân Hàng" style={{ marginTop: 8, maxWidth: 120, borderRadius: 8, border: '1px solid var(--border-color)' }} />}
                 </div>
               </div>
 
@@ -166,9 +181,9 @@ export default function UserProfile() {
                   <input type="text" className="form-control" value={paymentForm.momoName} onChange={(e) => setPaymentForm({...paymentForm, momoName: e.target.value})} />
                 </div>
                 <div className="form-group">
-                  <label>Link Ảnh QR MoMo</label>
-                  <input type="text" className="form-control" placeholder="https://..." value={paymentForm.momoQr} onChange={(e) => setPaymentForm({...paymentForm, momoQr: e.target.value})} />
-                  {paymentForm.momoQr && <img src={paymentForm.momoQr} alt="QR MoMo" style={{ marginTop: 8, maxWidth: 120, borderRadius: 8 }} />}
+                  <label>Tải Ảnh QR MoMo Lên</label>
+                  <input type="file" accept="image/*" className="form-control" onChange={(e) => handleImageUpload(e, 'momoQr')} style={{ padding: '8px 12px' }} />
+                  {paymentForm.momoQr && <img src={paymentForm.momoQr} alt="QR MoMo" style={{ marginTop: 8, maxWidth: 120, borderRadius: 8, border: '1px solid var(--border-color)' }} />}
                 </div>
               </div>
             </div>

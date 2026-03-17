@@ -5,7 +5,7 @@ import Modal from '../components/Modal';
 import { ShoppingCart, Minus, Plus, X, CreditCard, Banknote, Smartphone, CheckCircle, Printer, Send } from 'lucide-react';
 
 export default function EmployeeOrder() {
-  const { products, categories, tables, addOrder, updateTable, orders, updateOrder } = useData();
+  const { products, categories, tables, addOrder, updateTable, orders, updateOrder, settings } = useData();
   const { user } = useAuth();
   const [selectedTable, setSelectedTable] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -127,29 +127,46 @@ export default function EmployeeOrder() {
     const orderToPayment = addingToOrder || orders.find(o => o.tableId === selectedTable?.id && o.status === 'pending');
     if (!orderToPayment) return;
 
-    updateOrder(orderToPayment.id, {
-      status: 'paid',
-      paymentMethod,
-      transactionCode: paymentMethod !== 'cash' ? paymentForm.transactionCode : '',
-      cashReceived: paymentMethod === 'cash' ? Number(paymentForm.cashAmount) : orderToPayment.total,
-      changeAmount: paymentMethod === 'cash' ? Number(paymentForm.cashAmount) - orderToPayment.total : 0,
-      paidBy: user?.name || 'Nhân viên',
-      paidAt: new Date().toISOString(),
-      notifications: [...(orderToPayment.notifications || []), {
-        type: 'payment',
-        message: `${user?.name} đã thu tiền ${orderToPayment.tableName} - ${formatMoney(orderToPayment.total)} (${paymentMethod === 'cash' ? 'Tiền mặt' : paymentMethod === 'bank' ? 'Chuyển khoản' : 'MoMo'})`,
-        timestamp: new Date().toISOString(),
-        read: false,
-      }]
-    });
-
-    if (orderToPayment.tableId) {
-      updateTable(orderToPayment.tableId, { status: 'available' });
+    if (paymentMethod === 'cash') {
+      updateOrder(orderToPayment.id, {
+        status: 'paid',
+        paymentMethod,
+        cashReceived: Number(paymentForm.cashAmount),
+        changeAmount: Number(paymentForm.cashAmount) - orderToPayment.total,
+        paidBy: user?.name || 'Nhân viên',
+        paidAt: new Date().toISOString(),
+        notifications: [...(orderToPayment.notifications || []), {
+          type: 'payment',
+          message: `${user?.name} đã thu tiền mặt ${orderToPayment.tableName} - ${formatMoney(orderToPayment.total)}`,
+          timestamp: new Date().toISOString(),
+          read: false,
+        }]
+      });
+      if (orderToPayment.tableId) {
+        updateTable(orderToPayment.tableId, { status: 'available' });
+      }
+      setCurrentOrder(orderToPayment);
+      setShowPayment(false);
+      setShowBill(true);
+    } else {
+      // Yêu cầu xác nhận thanh toán QR
+      updateOrder(orderToPayment.id, {
+        status: 'pending_payment',
+        paymentMethod,
+        transactionCode: paymentForm.transactionCode,
+        requestedBy: user?.name,
+        requestedAt: new Date().toISOString(),
+        notifications: [...(orderToPayment.notifications || []), {
+          type: 'payment_request',
+          message: `${user?.name} yêu cầu xác nhận thanh toán ${paymentMethod === 'bank' ? 'CK' : 'MoMo'} cho ${orderToPayment.tableName} - ${formatMoney(orderToPayment.total)}`,
+          timestamp: new Date().toISOString(),
+          read: false,
+        }]
+      });
+      alert('Đã gửi yêu cầu xác nhận thanh toán! Đang chờ Quản trị viên duyệt.');
+      setShowPayment(false);
+      resetOrder();
     }
-
-    setCurrentOrder(orderToPayment);
-    setShowPayment(false);
-    setShowBill(true);
   };
 
   const resetOrder = () => {
@@ -383,7 +400,7 @@ export default function EmployeeOrder() {
         footer={<>
           <button className="btn btn-outline" onClick={() => setShowPayment(false)}>Hủy</button>
           <button className="btn btn-success btn-lg" onClick={handlePayment}>
-            <CheckCircle size={18} /> Xác Nhận Thanh Toán
+            <CheckCircle size={18} /> {paymentMethod === 'cash' ? 'Xác Nhận Thanh Toán' : 'Gửi Yêu Cầu Xác Nhận'}
           </button>
         </>}
       >
@@ -432,9 +449,34 @@ export default function EmployeeOrder() {
         )}
 
         {(paymentMethod === 'bank' || paymentMethod === 'momo') && (
+          <div style={{ background: 'var(--bg-lighter)', padding: 16, borderRadius: 12, marginBottom: 16, textAlign: 'center' }}>
+            <h4 style={{ marginBottom: 12 }}>
+              {paymentMethod === 'bank' ? 'Thanh Toán Chuyển Khoản' : 'Thanh Toán MoMo'}
+            </h4>
+            {paymentMethod === 'bank' && settings?.bankQr ? (
+              <div>
+                <img src={settings.bankQr} alt="QR Bank" style={{ maxWidth: 200, borderRadius: 8, margin: '0 auto 12px' }} />
+                <div style={{ fontWeight: 600 }}>{settings.bankName}</div>
+                <div className="text-muted">{settings.accountNumber} - {settings.accountName}</div>
+              </div>
+            ) : paymentMethod === 'momo' && settings?.momoQr ? (
+              <div>
+                <img src={settings.momoQr} alt="QR Momo" style={{ maxWidth: 200, borderRadius: 8, margin: '0 auto 12px' }} />
+                <div style={{ fontWeight: 600 }}>MoMo: {settings.momoNumber}</div>
+                <div className="text-muted">{settings.momoName}</div>
+              </div>
+            ) : (
+              <div className="text-muted" style={{ fontStyle: 'italic', padding: 20 }}>
+                Quản trị viên chưa cập nhật mã QR cho phương thức này.
+              </div>
+            )}
+          </div>
+        )}
+
+        {(paymentMethod === 'bank' || paymentMethod === 'momo') && (
           <div className="form-group">
-            <label>Mã Giao Dịch {paymentMethod === 'bank' ? 'Ngân Hàng' : 'MoMo'} *</label>
-            <input type="text" className="form-control" placeholder="Nhập mã giao dịch"
+            <label>Mã Giao Dịch {paymentMethod === 'bank' ? 'Ngân Hàng' : 'MoMo'} (Tùy chọn)</label>
+            <input type="text" className="form-control" placeholder="Nhập mã giao dịch nếu có"
               value={paymentForm.transactionCode}
               onChange={(e) => setPaymentForm({ ...paymentForm, transactionCode: e.target.value })} />
           </div>

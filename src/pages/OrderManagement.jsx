@@ -5,7 +5,7 @@ import Modal from '../components/Modal';
 import { ShoppingCart, Minus, Plus, X, Printer, CreditCard, Banknote, Smartphone, CheckCircle } from 'lucide-react';
 
 export default function OrderManagement() {
-  const { products, categories, tables, orders, addOrder, updateTable, updateOrder } = useData();
+  const { products, categories, tables, orders, addOrder, updateTable, updateOrder, settings } = useData();
   const { user } = useAuth();
   const [selectedTable, setSelectedTable] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -48,9 +48,8 @@ export default function OrderManagement() {
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
   const formatMoney = (n) => new Intl.NumberFormat('vi-VN').format(n) + 'đ';
 
-  // Check if table has existing active order
   const getActiveOrder = (tableId) => {
-    return orders.find(o => o.tableId === tableId && o.status === 'pending');
+    return orders.find(o => o.tableId === tableId && (o.status === 'pending' || o.status === 'pending_payment'));
   };
 
   const handleSelectTable = (table) => {
@@ -282,11 +281,12 @@ export default function OrderManagement() {
                   <div className="table-status" style={{
                     color: table.status === 'available' ? 'var(--text-muted)' : (activeOrder ? 'var(--accent-warning)' : 'var(--accent-danger)')
                   }}>
-                    {table.status === 'available' ? 'Trống' : activeOrder ? '⏳ Chưa TT' : 'Đang dùng'}
+                    {table.status === 'available' ? 'Trống' : activeOrder?.status === 'pending_payment' ? '⏳ Chờ duyệt TT' : 'Đang dùng'}
                   </div>
                   {activeOrder && (
                     <div style={{ fontSize: '0.7rem', color: 'var(--accent-warning)', marginTop: 4 }}>
                       {activeOrder.items?.length} món · {formatMoney(activeOrder.total)}
+                      {activeOrder.status === 'pending_payment' && <div style={{color: 'white', background: 'var(--accent-danger)', padding: '2px 4px', borderRadius: 4, marginTop: 4}}>ĐANG CHỜ TIỀN</div>}
                     </div>
                   )}
                 </div>
@@ -324,7 +324,9 @@ export default function OrderManagement() {
               <div className="card mb-2" style={{ padding: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <h4 style={{ margin: 0 }}>📋 Order hiện tại ({currentOrder.items?.length} món)</h4>
-                  <span className="badge badge-warning">⏳ Chưa TT</span>
+                  <span className={`badge ${currentOrder.status === 'pending_payment' ? 'badge-danger' : 'badge-warning'}`}>
+                    {currentOrder.status === 'pending_payment' ? '⏳ Chờ duyệt TT' : '⏳ Chưa TT'}
+                  </span>
                 </div>
                 {currentOrder.items?.map((item, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.85rem' }}>
@@ -337,9 +339,30 @@ export default function OrderManagement() {
                   <span className="text-accent">{formatMoney(currentOrder.total)}</span>
                 </div>
                 <div style={{ marginTop: 16 }}>
-                  <button className="btn btn-success btn-block btn-lg" onClick={() => setShowPayment(true)}>
-                    <CreditCard size={20} /> Khách Yêu Cầu Thanh Toán
-                  </button>
+                  {currentOrder.status === 'pending_payment' ? (
+                    <button className="btn btn-primary btn-block btn-lg" onClick={() => {
+                        updateOrder(currentOrder.id, {
+                          status: 'paid',
+                          paidAt: new Date().toISOString(),
+                          paidBy: user?.name || 'Admin',
+                          notifications: [...(currentOrder.notifications || []), {
+                            type: 'payment_success',
+                            message: `Quản trị viên đã xác nhận thanh toán cho ${currentOrder.tableName} - ${formatMoney(currentOrder.total)}`,
+                            timestamp: new Date().toISOString(),
+                            read: false,
+                          }]
+                        });
+                        if (currentOrder.tableId) updateTable(currentOrder.tableId, { status: 'available' });
+                        alert('Đã xác nhận đã nhận tiền thành công!');
+                        setShowBill(true);
+                      }}>
+                      <CheckCircle size={20} /> Xác nhận Đã Nhận Tiền
+                    </button>
+                  ) : (
+                    <button className="btn btn-success btn-block btn-lg" onClick={() => setShowPayment(true)}>
+                      <CreditCard size={20} /> Khách Yêu Cầu Thanh Toán
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -474,19 +497,35 @@ export default function OrderManagement() {
           </div>
         )}
 
-        {paymentMethod === 'bank' && (
-          <div className="form-group">
-            <label>Mã Giao Dịch Ngân Hàng *</label>
-            <input type="text" className="form-control" placeholder="Nhập mã chuyển khoản"
-              value={paymentForm.transactionCode}
-              onChange={(e) => setPaymentForm({ ...paymentForm, transactionCode: e.target.value })} />
+        {(paymentMethod === 'bank' || paymentMethod === 'momo') && (
+          <div style={{ background: 'var(--bg-lighter)', padding: 16, borderRadius: 12, marginBottom: 16, textAlign: 'center' }}>
+            <h4 style={{ marginBottom: 12 }}>
+              {paymentMethod === 'bank' ? 'Thanh Toán Chuyển Khoản' : 'Thanh Toán MoMo'}
+            </h4>
+            {paymentMethod === 'bank' && settings?.bankQr ? (
+              <div>
+                <img src={settings.bankQr} alt="QR Bank" style={{ maxWidth: 200, borderRadius: 8, margin: '0 auto 12px' }} />
+                <div style={{ fontWeight: 600 }}>{settings.bankName}</div>
+                <div className="text-muted">{settings.accountNumber} - {settings.accountName}</div>
+              </div>
+            ) : paymentMethod === 'momo' && settings?.momoQr ? (
+              <div>
+                <img src={settings.momoQr} alt="QR Momo" style={{ maxWidth: 200, borderRadius: 8, margin: '0 auto 12px' }} />
+                <div style={{ fontWeight: 600 }}>MoMo: {settings.momoNumber}</div>
+                <div className="text-muted">{settings.momoName}</div>
+              </div>
+            ) : (
+              <div className="text-muted" style={{ fontStyle: 'italic', padding: 20 }}>
+                Quản trị viên chưa cập nhật mã QR cho phương thức này.
+              </div>
+            )}
           </div>
         )}
 
-        {paymentMethod === 'momo' && (
+        {(paymentMethod === 'bank' || paymentMethod === 'momo') && (
           <div className="form-group">
-            <label>Mã Giao Dịch MoMo *</label>
-            <input type="text" className="form-control" placeholder="Nhập mã giao dịch MoMo"
+            <label>Mã Giao Dịch {paymentMethod === 'bank' ? 'Ngân Hàng' : 'MoMo'} (Nếu có)</label>
+            <input type="text" className="form-control" placeholder="Nhập mã giao dịch"
               value={paymentForm.transactionCode}
               onChange={(e) => setPaymentForm({ ...paymentForm, transactionCode: e.target.value })} />
           </div>

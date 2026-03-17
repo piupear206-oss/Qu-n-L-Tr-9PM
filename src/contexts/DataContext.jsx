@@ -3,7 +3,7 @@ import { db, ref, set, onValue } from '../firebase';
 
 const DataContext = createContext(null);
 
-const DATA_KEYS = ['employees', 'products', 'categories', 'tables', 'orders', 'inventory', 'finance', 'attendance', 'salaryRecords', 'shifts'];
+const DATA_KEYS = ['employees', 'products', 'categories', 'tables', 'orders', 'inventory', 'finance', 'attendance', 'salaryRecords', 'shifts', 'settings'];
 
 const DEFAULT_SHIFTS = [
   { id: 'morning', name: 'Ca Sáng', start: '08:00', end: '12:00' },
@@ -63,6 +63,7 @@ const DEFAULTS = {
   attendance: [],
   salaryRecords: [],
   shifts: DEFAULT_SHIFTS,
+  settings: { bankName: '', accountName: '', accountNumber: '', bankQr: '', momoNumber: '', momoName: '', momoQr: '' },
 };
 
 // Save to Firebase helper
@@ -85,11 +86,12 @@ export function DataProvider({ children }) {
   const [attendance, setAttendance] = useState(DEFAULTS.attendance);
   const [salaryRecords, setSalaryRecords] = useState(DEFAULTS.salaryRecords);
   const [shifts, setShifts] = useState(DEFAULTS.shifts);
+  const [settings, setSettings] = useState(DEFAULTS.settings);
   const [loaded, setLoaded] = useState(false);
 
   // Real-time listeners from Firebase
   useEffect(() => {
-    const stateSetters = { employees: setEmployees, products: setProducts, categories: setCategories, tables: setTables, orders: setOrders, inventory: setInventory, finance: setFinance, attendance: setAttendance, salaryRecords: setSalaryRecords, shifts: setShifts };
+    const stateSetters = { employees: setEmployees, products: setProducts, categories: setCategories, tables: setTables, orders: setOrders, inventory: setInventory, finance: setFinance, attendance: setAttendance, salaryRecords: setSalaryRecords, shifts: setShifts, settings: setSettings };
     const unsubscribes = [];
 
     DATA_KEYS.forEach(key => {
@@ -98,9 +100,14 @@ export function DataProvider({ children }) {
         const val = snapshot.val();
         if (val) {
           // Firebase stores arrays as objects if they have gaps
-          const data = Array.isArray(val) ? val.filter(Boolean) : Object.values(val).filter(Boolean);
+          let data;
+          if (key === 'settings') {
+            data = val;
+          } else {
+            data = Array.isArray(val) ? val.filter(Boolean) : Object.values(val).filter(Boolean);
+          }
           stateSetters[key](data);
-        } else if (DEFAULTS[key].length > 0) {
+        } else if (DEFAULTS[key] && Object.keys(DEFAULTS[key]).length > 0) {
           // Initialize Firebase with defaults if empty
           saveToFirebase(key, DEFAULTS[key]);
           stateSetters[key](DEFAULTS[key]);
@@ -281,6 +288,12 @@ export function DataProvider({ children }) {
     setShifts(updated); saveAll('shifts', updated);
   };
 
+  // --- Settings ---
+  const updateSettings = (data) => {
+    const updated = { ...settings, ...data };
+    setSettings(updated); saveAll('settings', updated);
+  };
+
   // Stats
   const getTodayOrders = useCallback(() => {
     const today = new Date().toDateString();
@@ -315,6 +328,7 @@ export function DataProvider({ children }) {
     attendance, addAttendanceRecord, deleteAttendanceRecord,
     salaryRecords, addSalaryRecord, getSalaryByEmployee, getSalaryByMonth, // updateSalaryRecord and deleteSalaryRecord are missing from the requested value object
     shifts, addShift, updateShift, deleteShift,
+    settings, updateSettings,
     getTodayOrders, getTodayRevenue,
     generateId,
   };

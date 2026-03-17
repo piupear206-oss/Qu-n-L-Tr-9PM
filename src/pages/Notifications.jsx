@@ -17,7 +17,7 @@ export default function Notifications() {
         });
       }
     });
-    return notifs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    return notifs.sort((a, b) => new Date(b.timestamp || b.time || 0) - new Date(a.timestamp || a.time || 0));
   }, [orders]);
 
   const unreadNotifs = allNotifications.filter(n => !n.read);
@@ -139,7 +139,7 @@ export default function Notifications() {
                       </div>
                     )}
                     <div className="text-muted" style={{ fontSize: '0.75rem', marginTop: 4 }}>
-                      {new Date(notif.timestamp).toLocaleString('vi-VN')}
+                      {new Date(notif.timestamp || notif.time || Date.now()).toLocaleString('vi-VN')}
                     </div>
                   </div>
                 </div>

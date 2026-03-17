@@ -308,7 +308,7 @@ export function DataProvider({ children }) {
     employees, addEmployee, updateEmployee, deleteEmployee,
     products, addProduct, updateProduct, deleteProduct,
     categories, addCategory, deleteCategory,
-    tables, updateTable, getActiveOrder, // Note: addTable and deleteTable are missing from the requested value object
+    tables, addTable, updateTable, deleteTable, getActiveOrder,
     orders, addOrder, updateOrder, deleteOrder, markAsRead, markAllAsRead, getUnreadCount,
     inventory, addInventoryRecord, updateRecord, deleteRecord, // updateRecord and deleteRecord are generic, but addInventoryRecord is specific
     finance, addFinanceRecord, // deleteFinanceRecord is missing from the requested value object

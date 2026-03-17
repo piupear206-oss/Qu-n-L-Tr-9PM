@@ -92,7 +92,8 @@ export default function OrderManagement() {
           id: Date.now().toString(),
           type: 'update_order',
           message: `Thêm món: ${addedItemsMsg}`,
-          time: new Date().toISOString(),
+          items: cart.map(i => `${i.qty}x ${i.name}`),
+          timestamp: new Date().toISOString(),
           read: false
         }]
       });
@@ -110,7 +111,8 @@ export default function OrderManagement() {
           id: Date.now().toString(),
           type: 'new_order',
           message: `Order mới: ${selectedTable?.name || 'Bàn Khách mang đi'}`,
-          time: new Date().toISOString(),
+          items: cart.map(i => `${i.qty}x ${i.name}`),
+          timestamp: new Date().toISOString(),
           read: false
         }]
       });
@@ -135,7 +137,8 @@ export default function OrderManagement() {
         id: Date.now().toString(),
         type: 'new_order',
         message: `Order mới: ${selectedTable?.name || 'Bàn Khách mang đi'}`,
-        time: new Date().toISOString(),
+        items: cart.map(i => `${i.qty}x ${i.name}`),
+        timestamp: new Date().toISOString(),
         read: false
       }]
     };

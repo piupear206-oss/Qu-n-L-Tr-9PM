@@ -326,7 +326,7 @@ export function DataProvider({ children }) {
     inventory, addInventoryRecord, updateRecord, deleteRecord, // updateRecord and deleteRecord are generic, but addInventoryRecord is specific
     finance, addFinanceRecord, // deleteFinanceRecord is missing from the requested value object
     attendance, addAttendanceRecord, deleteAttendanceRecord,
-    salaryRecords, addSalaryRecord, getSalaryByEmployee, getSalaryByMonth, // updateSalaryRecord and deleteSalaryRecord are missing from the requested value object
+    salaryRecords, addSalaryRecord, updateSalaryRecord, deleteSalaryRecord, getSalaryByEmployee, getSalaryByMonth,
     shifts, addShift, updateShift, deleteShift,
     settings, updateSettings,
     getTodayOrders, getTodayRevenue,

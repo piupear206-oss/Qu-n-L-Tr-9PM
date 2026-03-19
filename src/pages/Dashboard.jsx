@@ -54,9 +54,29 @@ export default function Dashboard() {
   const todayAllOrders = orders.filter(o => new Date(o.createdAt).toDateString() === todayStr);
   const occupiedTables = tables.filter(t => t.status === 'occupied').length;
 
+  const activeOrdersForStats = useMemo(() => {
+    switch (revenueTab) {
+      case 'today': return paidOrders.filter(o => new Date(o.createdAt).toDateString() === todayStr);
+      case 'week': return paidOrders.filter(o => new Date(o.createdAt) >= startOfWeek);
+      case 'month': return paidOrders.filter(o => new Date(o.createdAt) >= startOfMonth);
+      case 'year': return paidOrders.filter(o => new Date(o.createdAt) >= startOfYear);
+      case 'custom': {
+        const startObj = new Date(customStartDate);
+        startObj.setHours(0, 0, 0, 0);
+        const endObj = new Date(customEndDate);
+        endObj.setHours(23, 59, 59, 999);
+        return paidOrders.filter(o => {
+          const d = new Date(o.createdAt);
+          return d >= startObj && d <= endObj;
+        });
+      }
+      default: return [];
+    }
+  }, [paidOrders, revenueTab, todayStr, startOfWeek, startOfMonth, startOfYear, customStartDate, customEndDate]);
+
   const topProducts = useMemo(() => {
     const productCounts = {};
-    paidOrders.forEach(order => {
+    activeOrdersForStats.forEach(order => {
       (order.items || []).forEach(item => {
         if (!productCounts[item.id]) {
           productCounts[item.id] = { name: item.name, qty: 0, revenue: 0 };
@@ -65,8 +85,10 @@ export default function Dashboard() {
         productCounts[item.id].revenue += item.qty * item.price;
       });
     });
-    return Object.values(productCounts).sort((a, b) => b.qty - a.qty).slice(0, 10);
-  }, [paidOrders]);
+    return Object.values(productCounts).sort((a, b) => b.qty - a.qty);
+  }, [activeOrdersForStats]);
+
+  const totalCupsSold = topProducts.reduce((sum, p) => sum + p.qty, 0);
 
   const exportReport = () => {
     const csvRows = ['Tên Món,Đã Bán (ly),Doanh Thu (VNĐ)'];
@@ -212,20 +234,23 @@ export default function Dashboard() {
         {/* Top Products */}
         <div className="card">
           <div className="flex-between" style={{ marginBottom: 16 }}>
-            <h3 style={{ margin: 0 }}><Award size={20} style={{ verticalAlign: 'middle', marginRight: 8, color: 'var(--accent-warning)' }} />Món Bán Chạy Nhất</h3>
+            <div>
+              <h3 style={{ margin: 0 }}><Award size={20} style={{ verticalAlign: 'middle', marginRight: 8, color: 'var(--accent-warning)' }} />Thống Kê Món Bán Được</h3>
+              <div className="text-muted" style={{ fontSize: '0.8rem', marginTop: 4 }}>Tổng số: <strong className="text-accent">{totalCupsSold} ly</strong> đã bán</div>
+            </div>
             <button className="btn btn-outline btn-sm" onClick={exportReport}>
               <Download size={16} /> Xuất Báo Cáo
             </button>
           </div>
           {topProducts.length === 0 ? (
-            <div className="empty-state"><Award size={48} /><p>Chưa có dữ liệu bán hàng</p></div>
+            <div className="empty-state"><Award size={48} /><p>Chưa có dữ liệu bán hàng cho thời gian này</p></div>
           ) : (
-            <div className="data-table-wrapper">
+            <div className="data-table-wrapper" style={{ maxHeight: '400px', overflowY: 'auto' }}>
               <table className="data-table">
-                <thead>
+                <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
                   <tr>
                     <th>Tên Món</th>
-                    <th>Đã Bán</th>
+                    <th>Số Lượng</th>
                     <th>Doanh Thu</th>
                   </tr>
                 </thead>

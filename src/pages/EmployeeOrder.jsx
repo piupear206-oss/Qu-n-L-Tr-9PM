@@ -5,7 +5,7 @@ import Modal from '../components/Modal';
 import { ShoppingCart, Minus, Plus, X, CreditCard, Banknote, Smartphone, CheckCircle, Printer, Send } from 'lucide-react';
 
 export default function EmployeeOrder() {
-  const { products, categories, tables, addOrder, updateTable, orders, updateOrder, settings } = useData();
+  const { products, categories, tables, addOrder, updateTable, orders, updateOrder, deleteOrder, settings } = useData();
   const { user } = useAuth();
   const [selectedTable, setSelectedTable] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -170,15 +170,45 @@ export default function EmployeeOrder() {
   };
 
   const resetOrder = () => {
-    setCart([]);
     setSelectedTable(null);
+    setCart([]);
     setShowBill(false);
     setCurrentOrder(null);
-    setAddingToOrder(null);
     setPaymentForm({ cashAmount: '', transactionCode: '' });
+    setPaymentMethod('cash');
     setOrderNote('');
+    setAddingToOrder(null);
   };
 
+  const handleRemoveFromCurrentOrder = (index) => {
+    if (!window.confirm('Xóa món này khỏi order hiện tại?')) return;
+    
+    const targetOrder = addingToOrder || orders.find(o => o.id === selectedTable?.id && o.status === 'pending');
+    if (!targetOrder) return;
+
+    const newItems = [...targetOrder.items];
+    const removedItem = newItems.splice(index, 1)[0];
+    const newTotal = newItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+    if (newItems.length === 0) {
+      deleteOrder(targetOrder.id);
+      if (targetOrder.tableId) updateTable(targetOrder.tableId, { status: 'available' });
+      alert('Order đã bị xóa vì không còn món nào.');
+      resetOrder();
+    } else {
+      updateOrder(targetOrder.id, {
+        items: newItems,
+        total: newTotal,
+        lastUpdatedBy: user?.name,
+        lastUpdatedAt: new Date().toISOString()
+      });
+      if (addingToOrder) {
+        setAddingToOrder({...addingToOrder, items: newItems, total: newTotal});
+      } else if (currentOrder) {
+        setCurrentOrder({...currentOrder, items: newItems, total: newTotal});
+      }
+    }
+  };
   // Show Bill View
   if (showBill && currentOrder) {
     const paidOrder = orders.find(o => o.id === currentOrder.id) || currentOrder;
@@ -281,44 +311,49 @@ export default function EmployeeOrder() {
                 <span className="badge badge-purple" style={{ fontSize: '0.9rem', padding: '6px 14px' }}>
                   📍 {selectedTable.name}
                 </span>
-                {addingToOrder && (
-                  <span className="badge badge-success" style={{ marginLeft: 8 }}>
-                    Thêm món vào order hiện tại
-                  </span>
-                )}
-              </div>
-              <button className="btn btn-outline btn-sm" onClick={() => { setSelectedTable(null); setCart([]); setAddingToOrder(null); }}>
-                ← Quay Lại
-              </button>
+              {addingToOrder && (
+                <span className="badge badge-success" style={{ marginLeft: 8 }}>
+                  Thêm món vào order hiện tại
+                </span>
+              )}
             </div>
+            <button className="btn btn-outline btn-sm" onClick={() => { setSelectedTable(null); setCart([]); setAddingToOrder(null); }}>
+              ← Quay Lại
+            </button>
+          </div>
 
-            {/* Show existing order items if adding to order */}
-            {addingToOrder && (
-              <div className="card mb-2" style={{ padding: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <h4 style={{ margin: 0 }}>📋 Order hiện tại ({addingToOrder.items?.length} món)</h4>
-                  <span className="badge badge-warning">⏳ Chưa TT</span>
-                </div>
-                {addingToOrder.items?.map((item, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.85rem' }}>
-                    <span>{item.emoji} {item.qty}x {item.name}</span>
-                    <span className="text-accent">{formatMoney(item.price * item.qty)}</span>
-                  </div>
-                ))}
-                <div style={{ borderTop: '1px dashed var(--border-color)', marginTop: 8, paddingTop: 8, fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Tổng hóa đơn hiện tại:</span>
-                  <span className="text-accent">{formatMoney(addingToOrder.total)}</span>
-                </div>
-                <div style={{ marginTop: 16 }}>
-                  <button className="btn btn-success btn-block btn-lg" onClick={() => {
-                    setSelectedTable({ ...selectedTable });
-                    setShowPayment(true);
-                  }}>
-                    <CreditCard size={20} /> Khách Yêu Cầu Thanh Toán
-                  </button>
-                </div>
+          {/* Show existing order items if adding to order */}
+          {addingToOrder && (
+            <div className="card mb-2" style={{ padding: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <h4 style={{ margin: 0 }}>📋 Order hiện tại ({addingToOrder.items?.length} món)</h4>
+                <span className="badge badge-warning">⏳ Chưa TT</span>
               </div>
-            )}
+              {(addingToOrder || currentOrder).items?.map((item, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', fontSize: '0.85rem' }}>
+                  <div style={{ flex: 1 }}>{item.emoji} {item.qty}x {item.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="text-accent">{formatMoney(item.price * item.qty)}</span>
+                    <button className="btn btn-ghost text-danger" style={{ padding: 4 }} onClick={() => handleRemoveFromCurrentOrder(i)}>
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <div style={{ borderTop: '1px dashed var(--border-color)', marginTop: 8, paddingTop: 8, fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
+                <span>Tổng hóa đơn hiện tại:</span>
+                <span className="text-accent">{formatMoney((addingToOrder || currentOrder).total)}</span>
+              </div>
+              <div style={{ marginTop: 16 }}>
+                <button className="btn btn-success btn-block btn-lg" onClick={() => {
+                  setSelectedTable({ ...selectedTable });
+                  setShowPayment(true);
+                }}>
+                  <CreditCard size={20} /> Khách Yêu Cầu Thanh Toán
+                </button>
+              </div>
+            </div>
+          )}
 
             <div className="product-categories">
               <button className={`category-tab ${!selectedCategory ? 'active' : ''}`}

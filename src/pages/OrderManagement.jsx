@@ -5,7 +5,7 @@ import Modal from '../components/Modal';
 import { ShoppingCart, Minus, Plus, X, Printer, CreditCard, Banknote, Smartphone, CheckCircle } from 'lucide-react';
 
 export default function OrderManagement() {
-  const { products, categories, tables, orders, addOrder, updateTable, updateOrder, settings } = useData();
+  const { products, categories, tables, orders, addOrder, updateTable, updateOrder, deleteOrder, settings } = useData();
   const { user } = useAuth();
   const [selectedTable, setSelectedTable] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -121,6 +121,31 @@ export default function OrderManagement() {
     alert('✅ Đã lưu order thành công!');
     setSelectedTable(null);
     setCurrentOrder(null);
+  };
+
+  const handleRemoveFromCurrentOrder = (index) => {
+    if (!currentOrder) return;
+    if (!window.confirm('Xóa món này khỏi order hiện tại?')) return;
+    
+    const newItems = [...currentOrder.items];
+    const removedItem = newItems.splice(index, 1)[0];
+    const newTotal = newItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+    if (newItems.length === 0) {
+      deleteOrder(currentOrder.id);
+      if (currentOrder.tableId) updateTable(currentOrder.tableId, { status: 'available' });
+      alert('Order đã bị xóa vì không còn món nào.');
+      setCurrentOrder(null);
+      setSelectedTable(null);
+    } else {
+      updateOrder(currentOrder.id, {
+        items: newItems,
+        total: newTotal,
+        lastUpdatedBy: user?.name || 'Admin',
+        lastUpdatedAt: new Date().toISOString()
+      });
+      setCurrentOrder({...currentOrder, items: newItems, total: newTotal});
+    }
   };
 
   const handlePayment = () => {
@@ -329,9 +354,14 @@ export default function OrderManagement() {
                   </span>
                 </div>
                 {currentOrder.items?.map((item, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.85rem' }}>
-                    <span>{item.emoji} {item.qty}x {item.name}</span>
-                    <span className="text-accent">{formatMoney(item.price * item.qty)}</span>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', fontSize: '0.85rem' }}>
+                    <div style={{ flex: 1 }}>{item.emoji} {item.qty}x {item.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className="text-accent">{formatMoney(item.price * item.qty)}</span>
+                      <button className="btn btn-ghost text-danger" style={{ padding: 4 }} onClick={() => handleRemoveFromCurrentOrder(i)}>
+                        <X size={14} />
+                      </button>
+                    </div>
                   </div>
                 ))}
                 <div style={{ borderTop: '1px dashed var(--border-color)', marginTop: 8, paddingTop: 8, fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>

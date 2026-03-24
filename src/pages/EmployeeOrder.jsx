@@ -84,6 +84,7 @@ export default function EmployeeOrder() {
       updateOrder(addingToOrder.id, {
         items: updatedItems,
         total: newTotal,
+        note: orderNote ? (addingToOrder.note ? `${addingToOrder.note} | ${orderNote}` : orderNote) : addingToOrder.note,
         lastUpdatedBy: user?.name || 'Nhân viên',
         lastUpdatedAt: new Date().toISOString(),
         notifications: [...(addingToOrder.notifications || []), {
@@ -246,6 +247,11 @@ export default function EmployeeOrder() {
             <span>TỔNG CỘNG:</span>
             <span>{formatMoney(paidOrder.total)}</span>
           </div>
+          {paidOrder.note && (
+            <div style={{ marginTop: 12, fontSize: '0.85rem', fontStyle: 'italic', padding: '8px', border: '1px dashed #ccc', borderRadius: 6 }}>
+              <strong>Ghi chú:</strong> {paidOrder.note}
+            </div>
+          )}
           <div style={{ marginTop: 8, fontSize: '0.8rem' }}>
             <div className="bill-item">
               <span>Phương thức:</span>
@@ -340,6 +346,12 @@ export default function EmployeeOrder() {
                   </div>
                 </div>
               ))}
+              {(addingToOrder || currentOrder).note && (
+                <div style={{ marginTop: 8, padding: 8, background: 'var(--bg-lighter)', borderRadius: 6, fontSize: '0.85rem' }}>
+                  <span className="text-muted">📝 Ghi chú: </span>
+                  <strong>{(addingToOrder || currentOrder).note}</strong>
+                </div>
+              )}
               <div style={{ borderTop: '1px dashed var(--border-color)', marginTop: 8, paddingTop: 8, fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
                 <span>Tổng hóa đơn hiện tại:</span>
                 <span className="text-accent">{formatMoney((addingToOrder || currentOrder).total)}</span>

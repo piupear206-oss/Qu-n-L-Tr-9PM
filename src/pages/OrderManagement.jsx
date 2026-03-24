@@ -85,6 +85,7 @@ export default function OrderManagement() {
       updateOrder(currentOrder.id, {
         items: updatedItems,
         total: newTotal,
+        note: orderNote ? (currentOrder.note ? `${currentOrder.note} | ${orderNote}` : orderNote) : currentOrder.note,
         lastUpdatedBy: user?.name || 'Admin',
         lastUpdatedAt: new Date().toISOString(),
         notifications: [...(currentOrder.notifications || []), {
@@ -248,6 +249,12 @@ export default function OrderManagement() {
             <span>{formatMoney(currentOrder.total)}</span>
           </div>
 
+          {currentOrder.note && (
+            <div style={{ marginTop: 12, fontSize: '0.85rem', fontStyle: 'italic', padding: '8px', border: '1px dashed #ccc', borderRadius: 6 }}>
+              <strong>Ghi chú:</strong> {currentOrder.note}
+            </div>
+          )}
+
           <div style={{ marginTop: 8, fontSize: '0.8rem' }}>
             <div className="bill-item">
               <span>Phương thức:</span>
@@ -364,6 +371,12 @@ export default function OrderManagement() {
                     </div>
                   </div>
                 ))}
+                {currentOrder.note && (
+                  <div style={{ marginTop: 8, padding: 8, background: 'var(--bg-lighter)', borderRadius: 6, fontSize: '0.85rem' }}>
+                    <span className="text-muted">📝 Ghi chú: </span>
+                    <strong>{currentOrder.note}</strong>
+                  </div>
+                )}
                 <div style={{ borderTop: '1px dashed var(--border-color)', marginTop: 8, paddingTop: 8, fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
                   <span>Tổng hóa đơn hiện tại:</span>
                   <span className="text-accent">{formatMoney(currentOrder.total)}</span>

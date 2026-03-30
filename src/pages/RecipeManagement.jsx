@@ -119,14 +119,15 @@ export default function RecipeManagement() {
   const formTotalCost = useMemo(() => {
     return (formData.ingredientsList || []).reduce((sum, item) => sum + (Number(item.cost) || 0), 0);
   }, [formData.ingredientsList]);
+  const formCostWithWaste = formTotalCost * 1.1;
 
   const viewTotalCost = useMemo(() => {
     if (!selectedRecipe) return 0;
     return (selectedRecipe.ingredientsList || []).reduce((sum, item) => sum + (Number(item.cost) || 0), 0);
   }, [selectedRecipe]);
-  
+  const viewCostWithWaste = viewTotalCost * 1.1;
   const viewSellingPrice = Number(selectedRecipe?.sellingPrice) || 0;
-  const viewMargin = viewSellingPrice - viewTotalCost;
+  const viewMargin = viewSellingPrice - viewCostWithWaste;
   const viewMarginPercent = viewSellingPrice > 0 ? Math.round((viewMargin / viewSellingPrice) * 100) : 0;
 
   const handlePrint = () => {
@@ -318,12 +319,15 @@ export default function RecipeManagement() {
                 
                 {/* Admin Food Cost Dashboard */}
                 {isAdmin && (
-                  <div style={{ background: 'rgba(124, 58, 237, 0.1)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 20, marginBottom: 32, display: 'flex', gap: 24 }}>
-                    <div style={{ flex: 1 }}>
+                  <div style={{ background: 'rgba(124, 58, 237, 0.1)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 20, marginBottom: 32, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 200 }}>
                       <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                        <Calculator size={14} /> Tổng Giá Vốn (Cost Code)
+                        <Calculator size={14} /> Giá Vốn (+10% Hao Hụt)
                       </div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--accent-danger)' }}>{formatMoney(viewTotalCost)}</div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--accent-danger)' }}>{formatMoney(viewCostWithWaste)}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Gốc: {formatMoney(viewTotalCost)})</div>
+                      </div>
                     </div>
                     <div style={{ width: 1, background: 'var(--border-color)' }}></div>
                     <div style={{ flex: 1 }}>
@@ -521,8 +525,10 @@ export default function RecipeManagement() {
                       <Plus size={14} /> Thêm Định Mức Mới
                     </button>
                     
-                    <div style={{ display: 'flex', gap: 24, fontSize: '0.9rem', background: 'rgba(0,0,0,0.3)', padding: '8px 16px', borderRadius: 8 }}>
-                       <span>Tổng Giá Vốn Tạm Tính: <strong className="text-accent">{formatMoney(formTotalCost)}</strong></span>
+                    <div style={{ display: 'flex', gap: 16, fontSize: '0.9rem', background: 'rgba(0,0,0,0.3)', padding: '8px 16px', borderRadius: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                       <span>Gốc: {formatMoney(formTotalCost)}</span>
+                       <span style={{ color: 'var(--accent-warning)' }}>+10% Hao Hụt</span>
+                       <span>Tổng Vốn: <strong className="text-accent" style={{ fontSize: '1.1rem' }}>{formatMoney(formCostWithWaste)}</strong></span>
                     </div>
                   </div>
                 </div>
@@ -534,7 +540,7 @@ export default function RecipeManagement() {
                   </div>
                   {formData.sellingPrice > 0 && (
                     <div style={{ padding: '0 16px 10px', fontSize: '0.95rem' }}>
-                      Lợi nhuận gộp biên (Margin): <strong style={{ color: ((formData.sellingPrice - formTotalCost)/formData.sellingPrice*100) > 50 ? 'var(--accent-success)' : 'var(--accent-warning)' }}>{Math.round(((formData.sellingPrice - formTotalCost)/formData.sellingPrice)*100)}%</strong>
+                      Lợi nhuận gộp biên sau cấn trừ hao hụt: <strong style={{ color: ((formData.sellingPrice - formCostWithWaste)/formData.sellingPrice*100) > 50 ? 'var(--accent-success)' : 'var(--accent-warning)', fontSize: '1.1rem' }}>{Math.round(((formData.sellingPrice - formCostWithWaste)/formData.sellingPrice)*100)}%</strong>
                     </div>
                   )}
                 </div>

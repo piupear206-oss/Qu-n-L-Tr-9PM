@@ -91,6 +91,7 @@ export default function EmployeeOrder() {
           type: 'add_items',
           message: `${user?.name || 'Nhân viên'} đã thêm ${cart.length} món vào ${selectedTable.name}`,
           items: cart.map(i => `${i.qty}x ${i.name}`),
+          note: orderNote || '',
           timestamp: new Date().toISOString(),
           read: false,
         }]
@@ -109,6 +110,7 @@ export default function EmployeeOrder() {
           type: 'new_order',
           message: `${user?.name || 'Nhân viên'} đã order ${selectedTable.name}`,
           items: cart.map(i => `${i.qty}x ${i.name}`),
+          note: orderNote || '',
           timestamp: new Date().toISOString(),
           read: false,
         }]

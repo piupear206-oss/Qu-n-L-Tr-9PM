@@ -138,6 +138,11 @@ export default function Notifications() {
                         Món: {notif.items.join(' · ')}
                       </div>
                     )}
+                    {notif.note && (
+                      <div style={{ fontSize: '0.85rem', color: 'var(--accent-warning)', marginTop: 4, fontStyle: 'italic' }}>
+                        📝 Ghi chú: {notif.note}
+                      </div>
+                    )}
                     <div className="text-muted" style={{ fontSize: '0.75rem', marginTop: 4 }}>
                       {new Date(notif.timestamp || notif.time || Date.now()).toLocaleString('vi-VN')}
                     </div>

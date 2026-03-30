@@ -93,6 +93,7 @@ export default function OrderManagement() {
           type: 'update_order',
           message: `Thêm món: ${addedItemsMsg}`,
           items: cart.map(i => `${i.qty}x ${i.name}`),
+          note: orderNote || '',
           timestamp: new Date().toISOString(),
           read: false
         }]
@@ -112,6 +113,7 @@ export default function OrderManagement() {
           type: 'new_order',
           message: `Order mới: ${selectedTable?.name || 'Bàn Khách mang đi'}`,
           items: cart.map(i => `${i.qty}x ${i.name}`),
+          note: orderNote || '',
           timestamp: new Date().toISOString(),
           read: false
         }]

@@ -14,6 +14,7 @@ import OrderManagement from './pages/OrderManagement';
 import OrderHistory from './pages/OrderHistory';
 import EmployeeOrder from './pages/EmployeeOrder';
 import EmployeeAttendance from './pages/EmployeeAttendance';
+import RecipeManagement from './pages/RecipeManagement';
 import Notifications from './pages/Notifications';
 import MySalary from './pages/MySalary';
 import UserProfile from './pages/UserProfile';
@@ -230,6 +231,7 @@ function AppContent() {
         case 'products': return <ProductManagement />;
         case 'orders': return <OrderManagement />;
         case 'order-history': return <OrderHistory />;
+        case 'recipes': return <RecipeManagement />;
         case 'notifications': return <Notifications />;
         case 'profile': return <UserProfile />;
         default: return <Dashboard />;
@@ -238,6 +240,7 @@ function AppContent() {
       switch (activePage) {
         case 'employee-order': return <EmployeeOrder />;
         case 'order-history': return <OrderHistory />;
+        case 'recipes': return <RecipeManagement />;
         case 'employee-attendance': return <EmployeeAttendance />;
         case 'my-salary': return <MySalary />;
         case 'profile': return <UserProfile />;
@@ -258,6 +261,7 @@ function AppContent() {
       'products': 'Sản Phẩm',
       'orders': 'Order Món',
       'order-history': 'Lịch Sử',
+      'recipes': 'Công Thức',
       'notifications': 'Thông Báo',
       'profile': 'Hồ Sơ',
       'employee-order': 'Order Món',

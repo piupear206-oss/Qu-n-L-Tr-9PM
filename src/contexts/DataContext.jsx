@@ -3,7 +3,7 @@ import { db, ref, set, onValue } from '../firebase';
 
 const DataContext = createContext(null);
 
-const DATA_KEYS = ['employees', 'products', 'categories', 'tables', 'orders', 'inventory', 'finance', 'attendance', 'salaryRecords', 'shifts', 'settings'];
+const DATA_KEYS = ['employees', 'products', 'categories', 'tables', 'orders', 'inventory', 'finance', 'attendance', 'salaryRecords', 'shifts', 'settings', 'recipes'];
 
 const DEFAULT_SHIFTS = [
   { id: 'morning', name: 'Ca Sáng', start: '08:00', end: '12:00' },
@@ -64,6 +64,7 @@ const DEFAULTS = {
   salaryRecords: [],
   shifts: DEFAULT_SHIFTS,
   settings: { bankName: '', accountName: '', accountNumber: '', bankQr: '', momoNumber: '', momoName: '', momoQr: '' },
+  recipes: [],
 };
 
 // Save to Firebase helper
@@ -87,11 +88,12 @@ export function DataProvider({ children }) {
   const [salaryRecords, setSalaryRecords] = useState(DEFAULTS.salaryRecords);
   const [shifts, setShifts] = useState(DEFAULTS.shifts);
   const [settings, setSettings] = useState(DEFAULTS.settings);
+  const [recipes, setRecipes] = useState(DEFAULTS.recipes);
   const [loaded, setLoaded] = useState(false);
 
   // Real-time listeners from Firebase
   useEffect(() => {
-    const stateSetters = { employees: setEmployees, products: setProducts, categories: setCategories, tables: setTables, orders: setOrders, inventory: setInventory, finance: setFinance, attendance: setAttendance, salaryRecords: setSalaryRecords, shifts: setShifts, settings: setSettings };
+    const stateSetters = { employees: setEmployees, products: setProducts, categories: setCategories, tables: setTables, orders: setOrders, inventory: setInventory, finance: setFinance, attendance: setAttendance, salaryRecords: setSalaryRecords, shifts: setShifts, settings: setSettings, recipes: setRecipes };
     const unsubscribes = [];
 
     DATA_KEYS.forEach(key => {
@@ -294,6 +296,22 @@ export function DataProvider({ children }) {
     setSettings(updated); saveAll('settings', updated);
   };
 
+  // --- Recipes ---
+  const addRecipe = (rec) => {
+    const newRec = { ...rec, id: generateId(), createdAt: new Date().toISOString() };
+    const updated = [...recipes, newRec];
+    setRecipes(updated); saveAll('recipes', updated);
+    return newRec;
+  };
+  const updateRecipe = (id, data) => {
+    const updated = recipes.map(r => r.id === id ? { ...r, ...data } : r);
+    setRecipes(updated); saveAll('recipes', updated);
+  };
+  const deleteRecipe = (id) => {
+    const updated = recipes.filter(r => r.id !== id);
+    setRecipes(updated); saveAll('recipes', updated);
+  };
+
   // Stats
   const getTodayOrders = useCallback(() => {
     const today = new Date().toDateString();
@@ -329,6 +347,7 @@ export function DataProvider({ children }) {
     salaryRecords, addSalaryRecord, updateSalaryRecord, deleteSalaryRecord, getSalaryByEmployee, getSalaryByMonth,
     shifts, addShift, updateShift, deleteShift,
     settings, updateSettings,
+    recipes, addRecipe, updateRecipe, deleteRecipe,
     getTodayOrders, getTodayRevenue,
     generateId,
   };

@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard, Users, Package, DollarSign, Armchair,
   ShoppingCart, Coffee, ClipboardList, Camera, Calculator,
-  LogOut, Bell, User, X
+  LogOut, Bell, User, X, BookOpen
 } from 'lucide-react';
 
 const adminNav = [
@@ -14,6 +14,7 @@ const adminNav = [
     { id: 'products', label: 'Sản Phẩm', icon: Coffee },
     { id: 'orders', label: 'Order Món', icon: ShoppingCart },
     { id: 'order-history', label: 'Lịch Sử Order', icon: ClipboardList },
+    { id: 'recipes', label: 'Công Thức', icon: BookOpen },
     { id: 'notifications', label: 'Thông Báo', icon: Bell },
   ]},
   { section: 'Quản Lí', items: [
@@ -33,6 +34,7 @@ const employeeNav = [
   { section: 'Bán Hàng', items: [
     { id: 'employee-order', label: 'Order Món', icon: ShoppingCart },
     { id: 'order-history', label: 'Lịch Sử / In Bill', icon: ClipboardList },
+    { id: 'recipes', label: 'Công Thức', icon: BookOpen },
   ]},
   { section: 'Cá Nhân', items: [
     { id: 'employee-attendance', label: 'Chấm Công', icon: Camera },

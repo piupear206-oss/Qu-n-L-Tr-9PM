@@ -6,7 +6,7 @@ import { Plus, Edit2, Trash2, X, Search, Clock, Wrench, Video, Printer, BookOpen
 const formatMoney = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
 
 export default function RecipeManagement() {
-  const { recipes, addRecipe, updateRecipe, deleteRecipe, categories } = useData();
+  const { recipes, addRecipe, updateRecipe, deleteRecipe, categories, inventory } = useData();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
 
@@ -102,7 +102,7 @@ export default function RecipeManagement() {
 
   const handleAddIngredient = () => {
     const newList = [...(formData.ingredientsList || [])];
-    newList.push({ id: Date.now().toString(), name: '', qty: '', unit: 'ml', cost: '' });
+    newList.push({ id: Date.now().toString(), inventoryId: '', name: '', qty: '', unit: 'ml', cost: '' });
     setFormData({ ...formData, ingredientsList: newList });
   };
 
@@ -506,7 +506,15 @@ export default function RecipeManagement() {
                   )}
                   {formData.ingredientsList?.map((item) => (
                     <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 40px', gap: 12, marginBottom: 8 }}>
-                      <input type="text" className="form-control" placeholder="Trà đen..." value={item.name} onChange={e => handleIngredientChange(item.id, 'name', e.target.value)} required />
+                      <select className="form-control" value={item.inventoryId || ''} onChange={e => {
+                        const invId = e.target.value;
+                        const invItem = inventory.find(i => i.id === invId);
+                        const newList = formData.ingredientsList.map(i => i.id === item.id ? { ...i, inventoryId: invId, name: invItem ? invItem.name : '' } : i);
+                        setFormData({ ...formData, ingredientsList: newList });
+                      }} required>
+                        <option value="">-- Chọn Kho --</option>
+                        {inventory.map(inv => <option key={inv.id} value={inv.id}>{inv.name} (Kho còn: {inv.quantity} {inv.unit})</option>)}
+                      </select>
                       <input type="number" className="form-control" placeholder="100" value={item.qty} onChange={e => handleIngredientChange(item.id, 'qty', e.target.value)} required />
                       <select className="form-control" value={item.unit} onChange={e => handleIngredientChange(item.id, 'unit', e.target.value)}>
                         <option value="ml">ml</option>

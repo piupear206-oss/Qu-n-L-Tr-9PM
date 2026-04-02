@@ -3,7 +3,7 @@ import { useData } from '../contexts/DataContext';
 import { Bell, BellRing, CheckCircle, Volume2, VolumeX, Trash2, ShoppingCart } from 'lucide-react';
 
 export default function Notifications() {
-  const { orders, updateOrder } = useData();
+  const { orders, updateOrder, inventory } = useData();
   const [soundEnabled, setSoundEnabled] = useState(true);
   const lastNotifCountRef = useRef(0);
 
@@ -21,6 +21,10 @@ export default function Notifications() {
   }, [orders]);
 
   const unreadNotifs = allNotifications.filter(n => !n.read);
+
+  const lowStockItems = useMemo(() => {
+    return (inventory || []).filter(i => Number(i.quantity) <= 5);
+  }, [inventory]);
 
   // Voice announcement for new notifications
   useEffect(() => {
@@ -106,6 +110,25 @@ export default function Notifications() {
           </button>
         )}
       </div>
+
+      {lowStockItems.length > 0 && (
+        <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--accent-danger)', borderRadius: 12, padding: 16, marginBottom: 24, display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          <div style={{ background: 'var(--accent-danger)', padding: 8, borderRadius: '50%', color: '#fff', flexShrink: 0 }}>
+            <BellRing size={20} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <h4 style={{ color: 'var(--accent-danger)', marginBottom: 8, fontSize: '1.05rem', fontWeight: 600 }}>Cảnh Báo Dây Chuyền Hết Tồn Kho (Auto-Bot)</h4>
+            <p style={{ color: 'var(--text-primary)', fontSize: '0.95rem', marginBottom: 12 }}>Các nguyên liệu sau đang ở điểm giới hạn (&le; 5), dây chuyền yêu cầu ưu tiên nhập kho ngay lập tức:</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {lowStockItems.map(item => (
+                 <span key={item.id} className="badge badge-danger" style={{ fontSize: '0.85rem', padding: '6px 12px' }}>
+                    📦 {item.name} (Còn: {item.quantity} {item.unit})
+                 </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {allNotifications.length === 0 ? (
         <div className="card">

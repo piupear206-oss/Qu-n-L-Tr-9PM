@@ -199,8 +199,46 @@ export function DataProvider({ children }) {
     return newOrder;
   };
   const updateOrder = (id, data) => {
+    const previousOrder = orders.find(o => o.id === id);
     const updated = orders.map(o => o.id === id ? { ...o, ...data } : o);
     setOrders(updated); saveAll('orders', updated);
+
+    // Auto-Deduct Component
+    if (previousOrder?.status !== 'paid' && data.status === 'paid') {
+      const order = updated.find(o => o.id === id);
+      if (order && order.items && order.items.length > 0) {
+        let inventoryChanges = {};
+        
+        order.items.forEach(orderItem => {
+          const recipe = recipes.find(r => r.name === orderItem.name || r.id === orderItem.id);
+          if (recipe && recipe.ingredientsList) {
+            recipe.ingredientsList.forEach(ingredient => {
+              if (ingredient.inventoryId && ingredient.qty) {
+                if (!inventoryChanges[ingredient.inventoryId]) {
+                  inventoryChanges[ingredient.inventoryId] = { deduction: 0 };
+                }
+                inventoryChanges[ingredient.inventoryId].deduction += (Number(ingredient.qty) * Number(orderItem.qty));
+              }
+            });
+          }
+        });
+
+        if (Object.keys(inventoryChanges).length > 0) {
+          setInventory(currentInv => {
+            const newInv = currentInv.map(invItem => {
+              const change = inventoryChanges[invItem.id];
+              if (change) {
+                const newQty = Math.max(0, Number(invItem.quantity || 0) - change.deduction);
+                return { ...invItem, quantity: newQty };
+              }
+              return invItem;
+            });
+            saveAll('inventory', newInv);
+            return newInv;
+          });
+        }
+      }
+    }
   };
   const deleteOrder = (id) => {
     const updated = orders.filter(o => o.id !== id);

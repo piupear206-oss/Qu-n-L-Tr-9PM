@@ -19,8 +19,21 @@ export function AuthProvider({ children }) {
   const [sessions, setSessions] = useState([]);
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem(SESSION_KEY);
-    return saved ? JSON.parse(saved) : null;
+    if (saved) {
+       try {
+          // Backward compatibility for existing naked JSON
+          if (saved.trim().startsWith('{')) return JSON.parse(saved);
+          // Parse obfuscated base64 storage payload
+          return JSON.parse(decodeURIComponent(escape(atob(saved))));
+       } catch(e) { return null; }
+    }
+    return null;
   });
+
+  const hashPassword = (password) => {
+    if (!password) return '';
+    return btoa(unescape(encodeURIComponent(password + "_9pm_secret_salt_2026")));
+  };
 
   // Listen to Firebase for users and sessions
   useEffect(() => {
@@ -75,7 +88,8 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (user) {
-      localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+      const payload = btoa(unescape(encodeURIComponent(JSON.stringify(user))));
+      localStorage.setItem(SESSION_KEY, payload);
     } else {
       localStorage.removeItem(SESSION_KEY);
       localStorage.removeItem('9pm_session_id');
@@ -98,7 +112,8 @@ export function AuthProvider({ children }) {
   };
 
   const login = (username, password) => {
-    const found = users.find(u => u.username === username && u.password === password);
+    const hashed = hashPassword(password);
+    const found = users.find(u => u.username === username && (u.password === hashed || u.password === password));
     if (found) {
       const userData = { id: found.id, username: found.username, name: found.name, role: found.role, employeeId: found.employeeId };
       setUser(userData);
@@ -146,13 +161,18 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const isAdmin = () => user?.role === 'admin' || user?.role === 'manager';
+  const isAdmin = () => {
+    if (!user) return false;
+    const dbUser = users.find(u => u.id === user.id);
+    if (dbUser) return dbUser.role === 'admin' || dbUser.role === 'manager'; // Real-time DB check prevents escalation
+    return user.role === 'admin' || user.role === 'manager';
+  };
 
   const createEmployeeAccount = (employeeId, employeeName, username, password, role = 'employee') => {
     if (users.find(u => u.username === username)) {
       return { success: false, message: 'Tên đăng nhập đã tồn tại!' };
     }
-    const newUser = { id: 'emp_' + Date.now(), username, password, name: employeeName, role, employeeId };
+    const newUser = { id: 'emp_' + Date.now(), username, password: hashPassword(password), name: employeeName, role, employeeId };
     const updated = [...users, newUser];
     setUsers(updated);
     set(ref(db, '9pm_users'), updated);
@@ -164,7 +184,7 @@ export function AuthProvider({ children }) {
       return { success: false, message: 'Tên đăng nhập đã được sử dụng!' };
     }
     // Default new registrations to employee role
-    const newUser = { id: 'user_' + Date.now(), username, password, name, role: 'employee' };
+    const newUser = { id: 'user_' + Date.now(), username, password: hashPassword(password), name, role: 'employee' };
     const updated = [...users, newUser];
     setUsers(updated);
     set(ref(db, '9pm_users'), updated);
@@ -177,7 +197,7 @@ export function AuthProvider({ children }) {
       return { success: false, message: 'Không tìm thấy tên đăng nhập này trong hệ thống!' };
     }
     const updated = [...users];
-    updated[userIndex].password = newPassword;
+    updated[userIndex].password = hashPassword(newPassword);
     setUsers(updated);
     set(ref(db, '9pm_users'), updated);
     return { success: true, message: 'Đã thiết lập lại mật khẩu thành công!' };

@@ -3,7 +3,7 @@ import { useData } from '../contexts/DataContext';
 import { DollarSign, ShoppingCart, Users, Armchair, TrendingUp, TrendingDown, Calendar, BarChart3, Award, Download } from 'lucide-react';
 
 export default function Dashboard() {
-  const { orders, employees, tables, finance } = useData();
+  const { orders, employees, tables, finance, recipes } = useData();
   const [revenueTab, setRevenueTab] = useState('today');
   const formatMoney = (n) => new Intl.NumberFormat('vi-VN').format(n) + 'đ';
 
@@ -23,8 +23,28 @@ export default function Dashboard() {
 
   const paidOrders = orders.filter(o => o.status === 'paid');
 
-  const [customStartDate, setCustomStartDate] = useState(todayStr.slice(0, 10)); // just some default, we'll use actual Date below
+  const [customStartDate, setCustomStartDate] = useState(todayStr.slice(0, 10));
   const [customEndDate, setCustomEndDate] = useState(todayStr.slice(0, 10));
+
+  const calculateOrderCost = (order) => {
+    let orderCost = 0;
+    (order.items || []).forEach(item => {
+      const recipe = recipes.find(r => r.name === item.name || r.id === item.id);
+      if (recipe) {
+        const rawCost = (recipe.ingredientsList || []).reduce((s, i) => s + (Number(i.cost) || 0), 0);
+        orderCost += rawCost * 1.1 * item.qty; // Cost + 10% waste * quantity sold
+      }
+    });
+    return orderCost;
+  };
+
+  const getStats = (ordersArray) => {
+    const count = ordersArray.length;
+    const total = ordersArray.reduce((s, o) => s + (o.total || 0), 0);
+    const grossCost = ordersArray.reduce((s, o) => s + calculateOrderCost(o), 0);
+    const profit = total - grossCost;
+    return { count, total, grossCost, profit };
+  };
 
   const revenueData = useMemo(() => {
     const todayOrders = paidOrders.filter(o => new Date(o.createdAt).toDateString() === todayStr);
@@ -43,13 +63,13 @@ export default function Dashboard() {
     });
 
     return {
-      today: { count: todayOrders.length, total: todayOrders.reduce((s, o) => s + (o.total || 0), 0) },
-      week: { count: weekOrders.length, total: weekOrders.reduce((s, o) => s + (o.total || 0), 0) },
-      month: { count: monthOrders.length, total: monthOrders.reduce((s, o) => s + (o.total || 0), 0) },
-      year: { count: yearOrders.length, total: yearOrders.reduce((s, o) => s + (o.total || 0), 0) },
-      custom: { count: customOrders.length, total: customOrders.reduce((s, o) => s + (o.total || 0), 0) }
+      today: getStats(todayOrders),
+      week: getStats(weekOrders),
+      month: getStats(monthOrders),
+      year: getStats(yearOrders),
+      custom: getStats(customOrders)
     };
-  }, [paidOrders, customStartDate, customEndDate, todayStr, startOfWeek, startOfMonth, startOfYear]);
+  }, [paidOrders, customStartDate, customEndDate, todayStr, startOfWeek, startOfMonth, startOfYear, recipes]);
 
   const todayAllOrders = orders.filter(o => new Date(o.createdAt).toDateString() === todayStr);
   const occupiedTables = tables.filter(t => t.status === 'occupied').length;
@@ -91,9 +111,16 @@ export default function Dashboard() {
   const totalCupsSold = topProducts.reduce((sum, p) => sum + p.qty, 0);
 
   const exportReport = () => {
-    const csvRows = ['Tên Món,Đã Bán (ly),Doanh Thu (VNĐ)'];
+    const csvRows = ['Tên Món,Đã Bán (ly),Giá Vốn Kèm Hao Hụt (VNĐ),Doanh Thu (VNĐ),Lợi Nhuận Gộp (VNĐ)'];
     topProducts.forEach(p => {
-      csvRows.push(`"${p.name}",${p.qty},${p.revenue}`);
+      const recipe = recipes.find(r => r.name === p.name);
+      let rawCost = 0;
+      if (recipe) {
+        rawCost = (recipe.ingredientsList || []).reduce((s, i) => s + (Number(i.cost) || 0), 0);
+      }
+      const itemGrossCost = rawCost * 1.1 * p.qty;
+      const profit = p.revenue - itemGrossCost;
+      csvRows.push(`"${p.name}",${p.qty},${itemGrossCost},${p.revenue},${profit}`);
     });
     const blob = new Blob(['\uFEFF' + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -127,6 +154,13 @@ export default function Dashboard() {
           <div className="stat-info">
             <div className="label">Doanh Thu Hôm Nay</div>
             <div className="value text-success">{formatMoney(revenueData.today.total)}</div>
+          </div>
+        </div>
+        <div className="stat-card" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(16,185,129,0) 100%)', borderColor: 'rgba(16,185,129,0.2)' }}>
+          <div className="stat-icon" style={{ background: 'var(--gradient-success)', color: '#fff' }}><TrendingUp size={24} /></div>
+          <div className="stat-info">
+            <div className="label" style={{ color: 'var(--accent-success)' }}>Lợi Nhuận Tiệm (Ước Tính)</div>
+            <div className="value text-success">{formatMoney(revenueData.today.profit)}</div>
           </div>
         </div>
         <div className="stat-card">
